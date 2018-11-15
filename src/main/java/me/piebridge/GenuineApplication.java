@@ -11,4 +11,14 @@ public class GenuineApplication extends Application {
         System.loadLibrary("genuine");
     }
 
+    private boolean mFake;
+
+    public final void setFake() {
+        mFake = true;
+    }
+
+    public final boolean isFake() {
+        return mFake;
+    }
+
 }

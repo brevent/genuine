@@ -2,20 +2,29 @@
 #include <string.h>
 #include <jni.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <stdlib.h>
-#include <time.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dlfcn.h>
 #include <sys/system_properties.h>
 #include <inttypes.h>
+#include <android/log.h>
+#include <errno.h>
 
 #if __has_include("genuine.h")
 #include "genuine.h"
 #else
 #error "please define genuine.h"
 #endif
+
+#include "genuine_extra.h"
+
+#ifndef TAG
+#define TAG "Genuine"
+#endif
+#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
+#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
+#define LOGE(...) (__android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
 
 static jboolean genuine;
 
@@ -953,6 +962,9 @@ static int checkSignature(const char *path) {
     unsigned offset, size;
     int hash;
 
+#ifdef DEBUG
+    LOGI("check signature for %s", path);
+#endif
     int ret = 1;
     int fd = open(path, O_RDONLY);
     if (fd == -1) {
@@ -1049,6 +1061,103 @@ static inline bool isapk(const char *str) {
            && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
 }
 
+#ifdef ANTI_ODEX
+static inline bool isdex(const char *str) {
+    const char *dot = strrchr(str, '.');
+    return dot != NULL
+           && *++dot == 'd'
+           && *++dot == 'e'
+           && *++dot == 'x'
+           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
+}
+
+static inline bool isodex(const char *str) {
+    const char *dot = strrchr(str, '.');
+    return dot != NULL
+           && *++dot == 'o'
+           && *++dot == 'd'
+           && *++dot == 'e'
+           && *++dot == 'x'
+           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
+}
+
+static inline size_t fill_dex2oat_cmdline(char v[]) {
+    // dex2oat-cmdline
+    v[0x0] = 'k';
+    v[0x1] = 'u';
+    v[0x2] = 'i';
+    v[0x3] = ' ';
+    v[0x4] = '|';
+    v[0x5] = 'a';
+    v[0x6] = 'u';
+    v[0x7] = '/';
+    v[0x8] = '`';
+    v[0x9] = 'i';
+    v[0xa] = 'a';
+    v[0xb] = 'j';
+    v[0xc] = 'n';
+    v[0xd] = 'f';
+    v[0xe] = 'l';
+    for (int i = 0; i < 0xf; ++i) {
+        v[i] ^= ((i + 0xf) % 20);
+    }
+    v[0xf] = '\0';
+    return 0xf;
+}
+
+static inline size_t fill_dex_file(char v[]) {
+    // --dex-file
+    v[0x0] = '\'';
+    v[0x1] = '&';
+    v[0x2] = 'h';
+    v[0x3] = 'h';
+    v[0x4] = 'v';
+    v[0x5] = '"';
+    v[0x6] = 'v';
+    v[0x7] = 'x';
+    v[0x8] = '~';
+    v[0x9] = 'v';
+    for (int i = 0; i < 0xa; ++i) {
+        v[i] ^= ((i + 0xa) % 20);
+    }
+    v[0xa] = '\0';
+    return 0xa;
+}
+
+static int checkOdex(const char *path) {
+    size_t len;
+    char *cmdline;
+    char buffer[0x400], find[64];
+
+    int ret = 0;
+    int fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        return 1;
+    }
+
+    lseek(fd, 0x1000, SEEK_SET);
+    read(fd, buffer, 0x400);
+
+    cmdline = buffer;
+    len = fill_dex2oat_cmdline(find) + 1;
+    for (int i = 0; i < 0x200; ++i, ++cmdline) {
+        if (memcmp(cmdline, find, len) == 0) {
+            cmdline += len;
+            fill_dex_file(find);
+            if ((ret = (strstr(cmdline, find) != NULL))) {
+                fill_dex2oat_cmdline(find);
+                LOGE("%s: %s", find, cmdline);
+            }
+            break;
+        }
+    }
+
+    close(fd);
+
+    return ret;
+}
+#endif
+
 static inline void fix_name(char name[], int length) {
     for (int i = 0; i < length; ++i) {
         name[i] ^= ((i + length) % 20);
@@ -1056,44 +1165,116 @@ static inline void fix_name(char name[], int length) {
     name[length] = '\0';
 }
 
+static inline bool isSameFile(char *path1, char *path2) {
+    struct stat stat1, stat2;
+    if (lstat(path1, &stat1)) {
+        LOGE("%s: %s", path1, strerror(errno));
+        return false;
+    }
+    if (lstat(path2, &stat2)) {
+        LOGE("%s: %s", path2, strerror(errno));
+        return false;
+    }
+    return stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino;
+}
+
+enum {
+    CHECK_UNKNOWN,
+    CHECK_FALSE,
+    CHECK_TRUE,
+};
+
 static jboolean checkGenuine() {
     FILE *fp;
     char maps[16] = {0};
+    char apk[NAME_MAX];
+    char line[PATH_MAX];
     char name[] = GENUINE_NAME;
-    jboolean check = JNI_TRUE;
-    int checkStatus = 0;
+    int check = CHECK_UNKNOWN;
+    char *data = getenv("ANDROID_DATA");
 
+    memset(apk, 0, NAME_MAX);
+    fix_name(name, (sizeof(name) / sizeof(char)) - 1);
     fill_proc_self_maps(maps);
-    fix_name(name, sizeof(name) / sizeof(char));
-
     fp = fopen(maps, "r");
-    if (fp != NULL) {
-        char line[PATH_MAX];
-        while (fgets(line, PATH_MAX - 1, fp) != NULL) {
-            if (strstr(line, name) != NULL) {
-                char *path = line;
-                while (*path != '/') {
-                    ++path;
-                }
-                rstrip(path);
-                if (access(path, F_OK) == 0) {
-                    if ((checkStatus & 0x1) == 0 && isapk(path)) {
-                        checkStatus |= 0x1;
-                        if (checkSignature(path) == 0) {
-                            check = JNI_TRUE;
-                        } else {
-                            check = JNI_FALSE;
-                        }
-                    }
-                    if ((checkStatus == 0x1) || !check) {
-                        break;
-                    }
-                }
+    if (fp == NULL) {
+        return JNI_FALSE;
+    }
+
+    while (fgets(line, PATH_MAX - 1, fp) != NULL) {
+        char *path = line;
+        if (strchr(line, '/') == NULL) {
+            continue;
+        }
+        while (*path != '/') {
+            ++path;
+        }
+        rstrip(path);
+#ifdef ANTI_ODEX
+        if ((isodex(path) || isdex(path))) {
+#ifdef DEBUG
+            LOGI("check %s", path);
+#endif
+            if (strstr(path, name) != NULL && access(path, F_OK) == 0 && checkOdex(path)) {
+                LOGE("%s", path);
+                check = JNI_FALSE;
+                break;
             }
         }
-        fclose(fp);
+#endif
+        if (isapk(path)) {
+#ifdef DEBUG
+            LOGI("check %s", path);
+#endif
+            if (strstr(path, name) != NULL && access(path, F_OK) == 0) {
+                if (apk[0] != 0) {
+                    if (!strcmp(path, apk) || isSameFile(path, apk)) {
+                        check = CHECK_TRUE;
+                    } else {
+                        LOGE("%s != %s", path, apk);
+                        check = CHECK_FALSE;
+                        goto clean;
+                    }
+                } else {
+                    if (checkSignature(path)) {
+                        LOGE("%s", path);
+                        check = CHECK_FALSE;
+                        goto clean;
+                    } else {
+#ifdef DEBUG
+                        LOGI("%s", path);
+#endif
+                        check = CHECK_TRUE;
+                        sprintf(apk, "%s", path);
+                    }
+                }
+            } else if (strncmp(path, data, strlen(data)) == 0) {
+#ifdef ANTI_OVERLAY
+                LOGE("%s", path);
+                check = CHECK_FALSE;
+                goto clean;
+#else
+                if (check == CHECK_UNKNOWN) {
+                    LOGW("%s", path);
+                    check = CHECK_FALSE;
+                }
+#endif
+            }
+        }
     }
-    return check;
+
+    if (check == CHECK_UNKNOWN) {
+        check = CHECK_TRUE;
+    }
+
+clean:
+    fclose(fp);
+
+    if (check == CHECK_TRUE) {
+        return JNI_TRUE;
+    } else {
+        return JNI_FALSE;
+    }
 }
 
 #ifndef NELEM
@@ -1106,40 +1287,66 @@ static char xposedInvokeName[0x10];
 static char xposedInvokeSignature[0x80];
 
 // FIXME: define methods in your own class
+// FIXME: private static native Object invoke(Member m, int i, Object a, Object t, Object[] as) throws Throwable;
+// FIXME: public static native int version();
+
+#ifndef GENUINE_CLAZZ
+#define GENUINE_CLAZZ "me/piebridge/Genuine"
+#endif
+
 static JNINativeMethod methods[] = {
-        // FIXME: private static native Object invoke(Member m, int i, Object a, Object t, Object[] as) throws Throwable;
         {xposedInvokeName, xposedInvokeSignature, reinterpret_cast<void *>(invoke)},
-        // FIXME: public static native int version();
         {"version",        "()I",                 reinterpret_cast<void *>(version)},
-        // TODO: other methods if exists
 };
 
+#ifndef JNI_ONLOAD
 jint JNI_OnLoad(JavaVM *jvm, void *) {
     JNIEnv *env;
     jclass clazz;
+
+#ifdef DEBUG
+    LOGI("JNI_OnLoad start");
+#endif
 
     if (jvm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
 
-    // FIXME: use your own class
-    if ((clazz = env->FindClass("me/piebridge/Genuine")) == NULL) {
+    if ((clazz = env->FindClass(GENUINE_CLAZZ)) == NULL) {
         return JNI_ERR;
     }
 
-    fill_invoke((char *) methods[0].name);
-    fill_xposed_invoke_signature((char *) methods[0].signature);
+    fill_invoke(const_cast<char *>( methods[0].name));
+    fill_xposed_invoke_signature(const_cast<char *>(methods[0].signature));
     if (env->RegisterNatives(clazz, methods, NELEM(methods)) < 0) {
         return JNI_ERR;
     }
 
+#ifdef DEBUG
+    LOGI("JNI_OnLoad_Extra start");
+#endif
+    if (JNI_OnLoad_Extra(env, clazz) < 0) {
+        return JNI_ERR;
+    }
+
+#ifdef DEBUG
+    LOGI("antiXposed start");
+#endif
     if (!antiXposed(env, clazz)) {
         return JNI_ERR;
     }
 
+#ifdef DEBUG
+    LOGI("checkGenuine start");
+#endif
     genuine = checkGenuine();
 
     env->DeleteLocalRef(clazz);
 
+#ifdef DEBUG
+    LOGI("JNI_OnLoad end, genuine: %d", genuine);
+#endif
+
     return JNI_VERSION_1_6;
 }
+#endif

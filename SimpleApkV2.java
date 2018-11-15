@@ -83,10 +83,9 @@ public class SimpleApkV2 {
             int c = name.charAt(i) ^ ((i + length) % 20);
             sb.append("0x");
             sb.append(Integer.toHexString(c));
-            if (i < length - 1) {
-                sb.append(", ");
-            }
+            sb.append(", ");
         }
+        sb.append("0x0");
         sb.append("}");
         return sb.toString();
     }
