@@ -28,4 +28,4 @@ A module anti Xposed hook, anti fake signature, anti virtual app (binder proxy),
 
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-For Commercial usage, contact me.
+For commercial usage, contact me. However, if you are individial, or enterprise less than 5 staff, you can use it under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/).
