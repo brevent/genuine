@@ -22,11 +22,21 @@
 #ifndef TAG
 #define TAG "Genuine"
 #endif
+#define LOGD(...) (__android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__))
 #define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
 #define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
 #define LOGE(...) (__android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
 
-static jboolean genuine;
+enum {
+    CHECK_ERROR,
+    CHECK_UNKNOWN,
+    CHECK_FALSE,
+    CHECK_TRUE,
+};
+
+static int genuine;
+
+static bool xposed = false;
 
 static jmethodID original;
 
@@ -53,7 +63,7 @@ static jobject invoke(JNIEnv *env, jclass, jobject m, jint i, jobject, jobject t
 }
 
 static jint version(JNIEnv *, jclass) {
-    if (genuine) {
+    if (genuine == CHECK_TRUE) {
         return VERSION;
     } else {
         return 0;
@@ -887,6 +897,7 @@ static jboolean antiXposed(JNIEnv *env, jclass clazz) {
         return JNI_TRUE;
     }
 
+    xposed = true;
     // FIXME: log "try disable xposed hooks"
 
     fill_classLoader$SystemClassLoader(v1);
@@ -1178,13 +1189,107 @@ static inline bool isSameFile(char *path1, char *path2) {
     return stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino;
 }
 
-enum {
-    CHECK_UNKNOWN,
-    CHECK_FALSE,
-    CHECK_TRUE,
-};
+static inline void fill_classes_dex(char dex[]) {
+    dex[0x0] = 'h';
+    dex[0x1] = '`';
+    dex[0x2] = 'l';
+    dex[0x3] = '}';
+    dex[0x4] = '|';
+    dex[0x5] = 'u';
+    dex[0x6] = 'b';
+    dex[0x7] = '<';
+    dex[0x8] = 'w';
+    dex[0x9] = 'e';
+    dex[0xa] = 'y';
+    for (int i = 0; i < 0xb; ++i) {
+        dex[i] ^= ((i + 0xb) % 20);
+    }
+    dex[0xb] = '\0';
+}
 
-static jboolean checkGenuine() {
+static inline bool hasDex(char *path) {
+    unsigned char buffer[0x100];
+    unsigned offset, size;
+    char dex[0xb];
+    bool result = false;
+
+#ifdef DEBUG
+    LOGI("check classes.dex for %s", path);
+#endif
+    int fd = open(path, O_RDONLY);
+    if (fd == -1) {
+#ifdef DEBUG
+        LOGW("cannot open %s", path);
+#endif
+        return true;
+    }
+
+    for (int i = 0; i < 0x10000; ++i) {
+        lseek(fd, -i - 2, SEEK_END);
+        read(fd, buffer, 0x2);
+        size = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
+        if (size == static_cast<unsigned>(i)) {
+            lseek(fd, -22, SEEK_CUR);
+            read(fd, buffer, 0x4);
+            size = UNSIGNED(buffer);
+            if (size == 0x06054b50) {
+                lseek(fd, 12, SEEK_CUR);
+                break;
+            }
+        }
+        if (i == 0xffff) {
+#ifdef DEBUG
+            LOGW("cannot found eocd in %s", path);
+#endif
+            result = true;
+            goto clean;
+        }
+    }
+
+    read(fd, buffer, 0x4);
+    offset = UNSIGNED(buffer);
+
+    lseek(fd, offset, SEEK_SET);
+    fill_classes_dex(dex);
+    for (;;) {
+        read(fd, buffer, 0x4);
+        size = UNSIGNED(buffer);
+        if (size != 0x02014b50) {
+            break;
+        }
+        lseek(fd, 0x18, SEEK_CUR);
+        // File name length (n)
+        read(fd, buffer, 0x2);
+        size = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
+        // Extra field length (m)
+        read(fd, buffer, 0x2);
+        offset = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
+        // File comment length (k)
+        read(fd, buffer, 0x2);
+        offset += static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
+        lseek(fd, 0xc, SEEK_CUR);
+        read(fd, buffer, size);
+        buffer[size] = '\0';
+#if 0
+        LOGD("%s", buffer);
+#endif
+        if (memcmp(buffer, dex, 11) == 0) {
+#ifdef DEBUG
+            LOGI("found %s in %s", buffer, path);
+#endif
+            result = true;
+            break;
+        }
+        lseek(fd, offset, SEEK_CUR);
+    }
+
+clean:
+    close(fd);
+
+    return result;
+}
+
+static int checkGenuine() {
     FILE *fp;
     char maps[16] = {0};
     char apk[NAME_MAX];
@@ -1198,7 +1303,7 @@ static jboolean checkGenuine() {
     fill_proc_self_maps(maps);
     fp = fopen(maps, "r");
     if (fp == NULL) {
-        return JNI_FALSE;
+        return check;
     }
 
     while (fgets(line, PATH_MAX - 1, fp) != NULL) {
@@ -1249,6 +1354,11 @@ static jboolean checkGenuine() {
                     }
                 }
             } else if (strncmp(path, data, strlen(data)) == 0) {
+                if (!xposed && hasDex(path)) {
+                    LOGW("%s", path);
+                    check = CHECK_ERROR;
+                    goto clean;
+                }
 #ifdef ANTI_OVERLAY
                 LOGE("%s", path);
                 check = CHECK_FALSE;
@@ -1270,11 +1380,7 @@ static jboolean checkGenuine() {
 clean:
     fclose(fp);
 
-    if (check == CHECK_TRUE) {
-        return JNI_TRUE;
-    } else {
-        return JNI_FALSE;
-    }
+    return check;
 }
 
 #ifndef NELEM
@@ -1346,6 +1452,13 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
 #ifdef DEBUG
     LOGI("JNI_OnLoad end, genuine: %d", genuine);
 #endif
+
+    if (genuine == CHECK_ERROR) {
+#ifdef DEBUG
+        LOGE("JNI_ERR");
+#endif
+        return JNI_ERR;
+    }
 
     return JNI_VERSION_1_6;
 }
