@@ -1189,6 +1189,7 @@ static inline bool isSameFile(char *path1, char *path2) {
     return stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino;
 }
 
+#ifndef SUPPORT_EPIC
 static inline void fill_classes_dex(char dex[]) {
     dex[0x0] = 'h';
     dex[0x1] = '`';
@@ -1288,6 +1289,7 @@ clean:
 
     return result;
 }
+#endif
 
 static int checkGenuine() {
     FILE *fp;
@@ -1354,11 +1356,13 @@ static int checkGenuine() {
                     }
                 }
             } else if (strncmp(path, data, strlen(data)) == 0) {
+#ifndef SUPPORT_EPIC
                 if (!xposed && hasDex(path)) {
                     LOGW("%s", path);
                     check = CHECK_ERROR;
                     goto clean;
                 }
+#endif
 #ifdef ANTI_OVERLAY
                 LOGE("%s", path);
                 check = CHECK_FALSE;
@@ -1382,6 +1386,191 @@ clean:
 
     return check;
 }
+
+#ifdef SUPPORT_EPIC
+static inline bool islibepic64(const char *str) {
+    const char *dot = strrchr(str, 'l');
+    return dot != NULL
+           && *++dot == 'i'
+           && *++dot == 'b'
+           && *++dot == 'e'
+           && *++dot == 'p'
+           && *++dot == 'i'
+           && *++dot == 'c'
+           && *++dot == '6'
+           && *++dot == '4'
+           && *++dot == '.'
+           && *++dot == 's'
+           && *++dot == 'o'
+           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
+}
+
+static inline bool islibepic(const char *str) {
+    const char *dot = strrchr(str, 'l');
+    return dot != NULL
+           && *++dot == 'i'
+           && *++dot == 'b'
+           && *++dot == 'e'
+           && *++dot == 'p'
+           && *++dot == 'i'
+           && *++dot == 'c'
+           && *++dot == '.'
+           && *++dot == 's'
+           && *++dot == 'o'
+           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
+}
+
+static inline bool isEpic() {
+    FILE *fp;
+    char maps[16] = {0};
+    bool found = false;
+
+    fill_proc_self_maps(maps);
+
+    fp = fopen(maps, "r");
+    if (fp != NULL) {
+        char line[PATH_MAX];
+        while (fgets(line, PATH_MAX - 1, fp) != NULL) {
+            if (islibepic64(line) || islibepic(line)) {
+                found = true;
+                break;
+            }
+        }
+        fclose(fp);
+    }
+
+    return found;
+}
+#else
+static inline void fillThread(char map[]) {
+    // java/lang/Thread
+    map[0x0] = 'z';
+    map[0x1] = 'p';
+    map[0x2] = 'd';
+    map[0x3] = 'r';
+    map[0x4] = '/';
+    map[0x5] = 'm';
+    map[0x6] = 'c';
+    map[0x7] = 'm';
+    map[0x8] = 'c';
+    map[0x9] = '*';
+    map[0xa] = 'R';
+    map[0xb] = 'o';
+    map[0xc] = 'z';
+    map[0xd] = 'l';
+    map[0xe] = 'k';
+    map[0xf] = 'o';
+    for (int i = 0; i < 0x10; ++i) {
+        map[i] ^= ((i + 0x10) % 20);
+    }
+    map[0x10] = '\0';
+}
+
+static inline void fillSetUncaughtExceptionPreHandler(char map[]) {
+    // setUncaughtExceptionPreHandler
+    map[0x0] = 'y';
+    map[0x1] = 'n';
+    map[0x2] = 'x';
+    map[0x3] = 'X';
+    map[0x4] = '`';
+    map[0x5] = 'l';
+    map[0x6] = 'q';
+    map[0x7] = 'd';
+    map[0x8] = 'u';
+    map[0x9] = '{';
+    map[0xa] = 't';
+    map[0xb] = 'D';
+    map[0xc] = 'z';
+    map[0xd] = '`';
+    map[0xe] = 'a';
+    map[0xf] = 'u';
+    map[0x10] = 'r';
+    map[0x11] = 'n';
+    map[0x12] = 'g';
+    map[0x13] = 'g';
+    map[0x14] = 'Z';
+    map[0x15] = 'y';
+    map[0x16] = 'i';
+    map[0x17] = 'E';
+    map[0x18] = 'o';
+    map[0x19] = 'a';
+    map[0x1a] = 't';
+    map[0x1b] = '}';
+    map[0x1c] = 'w';
+    map[0x1d] = 'a';
+    for (int i = 0; i < 0x1e; ++i) {
+        map[i] ^= ((i + 0x1e) % 20);
+    }
+    map[0x1e] = '\0';
+}
+
+static inline void fillSetUncaughtExceptionPreHandlerSignature(char map[]) {
+    // (Ljava/lang/Thread$UncaughtExceptionHandler;)V
+    map[0x0] = '.';
+    map[0x1] = 'K';
+    map[0x2] = 'b';
+    map[0x3] = 'h';
+    map[0x4] = '|';
+    map[0x5] = 'j';
+    map[0x6] = '#';
+    map[0x7] = 'a';
+    map[0x8] = 'o';
+    map[0x9] = 'a';
+    map[0xa] = 'w';
+    map[0xb] = '>';
+    map[0xc] = 'F';
+    map[0xd] = '{';
+    map[0xe] = 'r';
+    map[0xf] = 'd';
+    map[0x10] = 'c';
+    map[0x11] = 'g';
+    map[0x12] = ' ';
+    map[0x13] = 'P';
+    map[0x14] = 'h';
+    map[0x15] = 'd';
+    map[0x16] = 'i';
+    map[0x17] = '|';
+    map[0x18] = 'm';
+    map[0x19] = 'c';
+    map[0x1a] = 'x';
+    map[0x1b] = 'H';
+    map[0x1c] = 'v';
+    map[0x1d] = 'l';
+    map[0x1e] = 'u';
+    map[0x1f] = 'a';
+    map[0x20] = 'f';
+    map[0x21] = 'z';
+    map[0x22] = 'o';
+    map[0x23] = 'o';
+    map[0x24] = 'J';
+    map[0x25] = 'b';
+    map[0x26] = 'j';
+    map[0x27] = 'a';
+    map[0x28] = 'j';
+    map[0x29] = 'b';
+    map[0x2a] = 'z';
+    map[0x2b] = '2';
+    map[0x2c] = '#';
+    map[0x2d] = ']';
+    for (int i = 0; i < 0x2e; ++i) {
+        map[i] ^= ((i + 0x2e) % 20);
+    }
+    map[0x2e] = '\0';
+}
+
+static void clearHandler(JNIEnv *env) {
+    char v1[0x80], v2[0x80];
+    fillThread(v1);
+    jclass clazz = env->FindClass(v1);
+    fillSetUncaughtExceptionPreHandler(v1);
+    fillSetUncaughtExceptionPreHandlerSignature(v2);
+    jmethodID method = env->GetStaticMethodID(clazz, v1, v2);
+    if (method != NULL) {
+        env->CallStaticVoidMethod(clazz, method, NULL);
+    }
+    env->DeleteLocalRef(clazz);
+}
+#endif
 
 #ifndef NELEM
 #define NELEM(x) static_cast<int>(sizeof(x) / sizeof((x)[0]))
@@ -1454,10 +1643,16 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
 #endif
 
     if (genuine == CHECK_ERROR) {
-#ifdef DEBUG
-        LOGE("JNI_ERR");
-#endif
+#ifdef SUPPORT_EPIC
+        if (!isEpic()) {
+            return JNI_ERR;
+        }
+#else
+        if (sdk() >= 26) {
+            clearHandler(env);
+        }
         return JNI_ERR;
+#endif
     }
 
     return JNI_VERSION_1_6;
