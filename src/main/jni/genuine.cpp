@@ -18,6 +18,9 @@
 #endif
 
 #include "genuine_extra.h"
+#ifdef SUPPORT_EPIC
+#include "epic.h"
+#endif
 
 #ifndef TAG
 #define TAG "Genuine"
@@ -37,6 +40,12 @@ enum {
 static int genuine;
 
 static bool xposed = false;
+
+#ifdef SUPPORT_EPIC
+static bool epic = false;
+#endif
+
+static bool edXposed = false;
 
 static jmethodID original;
 
@@ -871,23 +880,6 @@ static inline void fill_handleHookedMethod(char v[]) {
     v[0x12] = '\0';
 }
 
-static inline void fill_libartso(char v[]) {
-    // libart.so
-    v[0x0] = 'e';
-    v[0x1] = 'c';
-    v[0x2] = 'i';
-    v[0x3] = 'm';
-    v[0x4] = '\x7f';
-    v[0x5] = 'z';
-    v[0x6] = '!';
-    v[0x7] = 'c';
-    v[0x8] = '~';
-    for (int i = 0; i < 0x9; ++i) {
-        v[i] ^= ((i + 0x9) % 20);
-    }
-    v[0x9] = '\0';
-}
-
 static jboolean antiXposed(JNIEnv *env, jclass clazz) {
     jboolean result = JNI_FALSE;
     // current max is 0x77
@@ -929,21 +921,18 @@ static jboolean antiXposed(JNIEnv *env, jclass clazz) {
     jmethodID hooked = env->GetStaticMethodID(classXposedBridge, v2, v1);
 
     jmethodID *xposedCallbackMethod = NULL;
-    fill_libartso(v2);
-    void *handle = dlopen(v2, RTLD_NOW);
-    if (handle != NULL) {
-        if (sdk() < 23) {
-            fill_xposed_callback_method_l(v1);
-        } else {
-            fill_xposed_callback_method_m(v1);
-        }
-        xposedCallbackMethod = reinterpret_cast<jmethodID *>(dlsym(handle, v1));
-        dlclose(handle);
-        if (xposedCallbackMethod != NULL && *xposedCallbackMethod == hooked) {
-            *xposedCallbackMethod = replace;
-            result = JNI_TRUE;
-            goto clean;
-        }
+    void *handle = dlopen(NULL, RTLD_NOW);
+    if (sdk() < 23) {
+        fill_xposed_callback_method_l(v1);
+    } else {
+        fill_xposed_callback_method_m(v1);
+    }
+    xposedCallbackMethod = reinterpret_cast<jmethodID *>(dlsym(handle, v1));
+    dlclose(handle);
+    if (xposedCallbackMethod != NULL && *xposedCallbackMethod == hooked) {
+        *xposedCallbackMethod = replace;
+        result = JNI_TRUE;
+        goto clean;
     }
 
     xposedCallbackMethod = checkCallback(hooked);
@@ -1072,7 +1061,6 @@ static inline bool isapk(const char *str) {
            && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
 }
 
-#ifdef ANTI_ODEX
 static inline bool isdex(const char *str) {
     const char *dot = strrchr(str, '.');
     return dot != NULL
@@ -1092,6 +1080,7 @@ static inline bool isodex(const char *str) {
            && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
 }
 
+#ifdef ANTI_ODEX
 static inline size_t fill_dex2oat_cmdline(char v[]) {
     // dex2oat-cmdline
     v[0x0] = 'k';
@@ -1189,107 +1178,37 @@ static inline bool isSameFile(char *path1, char *path2) {
     return stat1.st_dev == stat2.st_dev && stat1.st_ino == stat2.st_ino;
 }
 
-#ifndef SUPPORT_EPIC
-static inline void fill_classes_dex(char dex[]) {
-    dex[0x0] = 'h';
-    dex[0x1] = '`';
-    dex[0x2] = 'l';
-    dex[0x3] = '}';
-    dex[0x4] = '|';
-    dex[0x5] = 'u';
-    dex[0x6] = 'b';
-    dex[0x7] = '<';
-    dex[0x8] = 'w';
-    dex[0x9] = 'e';
-    dex[0xa] = 'y';
-    for (int i = 0; i < 0xb; ++i) {
-        dex[i] ^= ((i + 0xb) % 20);
+static inline void fillDataApp(char map[]) {
+    // /data/app
+    map[0x0] = '&';
+    map[0x1] = 'n';
+    map[0x2] = 'j';
+    map[0x3] = 'x';
+    map[0x4] = 'l';
+    map[0x5] = '!';
+    map[0x6] = 'n';
+    map[0x7] = '`';
+    map[0x8] = 'a';
+    for (int i = 0; i < 0x9; ++i) {
+        map[i] ^= ((i + 0x9) % 20);
     }
-    dex[0xb] = '\0';
+    map[0x9] = '\0';
 }
 
-static inline bool hasDex(char *path) {
-    unsigned char buffer[0x100];
-    unsigned offset, size;
-    char dex[0xb];
-    bool result = false;
 
-#ifdef DEBUG
-    LOGI("check classes.dex for %s", path);
-#endif
-    int fd = open(path, O_RDONLY);
-    if (fd == -1) {
-#ifdef DEBUG
-        LOGW("cannot open %s", path);
-#endif
-        return true;
-    }
-
-    for (int i = 0; i < 0x10000; ++i) {
-        lseek(fd, -i - 2, SEEK_END);
-        read(fd, buffer, 0x2);
-        size = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
-        if (size == static_cast<unsigned>(i)) {
-            lseek(fd, -22, SEEK_CUR);
-            read(fd, buffer, 0x4);
-            size = UNSIGNED(buffer);
-            if (size == 0x06054b50) {
-                lseek(fd, 12, SEEK_CUR);
-                break;
-            }
-        }
-        if (i == 0xffff) {
-#ifdef DEBUG
-            LOGW("cannot found eocd in %s", path);
-#endif
-            result = true;
-            goto clean;
-        }
-    }
-
-    read(fd, buffer, 0x4);
-    offset = UNSIGNED(buffer);
-
-    lseek(fd, offset, SEEK_SET);
-    fill_classes_dex(dex);
-    for (;;) {
-        read(fd, buffer, 0x4);
-        size = UNSIGNED(buffer);
-        if (size != 0x02014b50) {
-            break;
-        }
-        lseek(fd, 0x18, SEEK_CUR);
-        // File name length (n)
-        read(fd, buffer, 0x2);
-        size = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
-        // Extra field length (m)
-        read(fd, buffer, 0x2);
-        offset = static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
-        // File comment length (k)
-        read(fd, buffer, 0x2);
-        offset += static_cast<unsigned>(buffer[0]) | static_cast<unsigned>(buffer[1]) << 8;
-        lseek(fd, 0xc, SEEK_CUR);
-        read(fd, buffer, size);
-        buffer[size] = '\0';
-#if 0
-        LOGD("%s", buffer);
-#endif
-        if (memcmp(buffer, dex, 11) == 0) {
-#ifdef DEBUG
-            LOGI("found %s in %s", buffer, path);
-#endif
-            result = true;
-            break;
-        }
-        lseek(fd, offset, SEEK_CUR);
-    }
-
-clean:
-    close(fd);
-
-    return result;
+static inline bool isData(const char *path) {
+    char v1[0x10];
+    fillDataApp(v1);
+    return strncmp(path, v1, strlen(v1)) == 0;
 }
-#endif
+
+enum {
+    TYPE_NON,
+    TYPE_APK,
+    TYPE_DEX,
+};
+
+
 
 static int checkGenuine() {
     FILE *fp;
@@ -1298,17 +1217,17 @@ static int checkGenuine() {
     char line[PATH_MAX];
     char name[] = GENUINE_NAME;
     int check = CHECK_UNKNOWN;
-    char *data = getenv("ANDROID_DATA");
 
     memset(apk, 0, NAME_MAX);
     fix_name(name, (sizeof(name) / sizeof(char)) - 1);
     fill_proc_self_maps(maps);
     fp = fopen(maps, "r");
     if (fp == NULL) {
-        return check;
+        return CHECK_ERROR;
     }
 
     while (fgets(line, PATH_MAX - 1, fp) != NULL) {
+        int type;
         char *path = line;
         if (strchr(line, '/') == NULL) {
             continue;
@@ -1317,8 +1236,15 @@ static int checkGenuine() {
             ++path;
         }
         rstrip(path);
+        if (isapk(path)) {
+            type = TYPE_APK;
+        } else if (isodex(path) || isdex(path)) {
+            type = TYPE_DEX;
+        } else {
+            type = TYPE_NON;
+        }
 #ifdef ANTI_ODEX
-        if ((isodex(path) || isdex(path))) {
+        if (type == TYPE_DEX) {
 #ifdef DEBUG
             LOGI("check %s", path);
 #endif
@@ -1329,24 +1255,22 @@ static int checkGenuine() {
             }
         }
 #endif
-        if (isapk(path)) {
+        if (strstr(path, name) != NULL) {
+            if (type == TYPE_APK && access(path, F_OK) == 0) {
 #ifdef DEBUG
-            LOGI("check %s", path);
+                LOGI("check %s", path);
 #endif
-            if (strstr(path, name) != NULL && access(path, F_OK) == 0) {
                 if (apk[0] != 0) {
                     if (!strcmp(path, apk) || isSameFile(path, apk)) {
                         check = CHECK_TRUE;
                     } else {
                         LOGE("%s != %s", path, apk);
                         check = CHECK_FALSE;
-                        goto clean;
                     }
                 } else {
                     if (checkSignature(path)) {
                         LOGE("%s", path);
                         check = CHECK_FALSE;
-                        goto clean;
                     } else {
 #ifdef DEBUG
                         LOGI("%s", path);
@@ -1355,25 +1279,35 @@ static int checkGenuine() {
                         sprintf(apk, "%s", path);
                     }
                 }
-            } else if (strncmp(path, data, strlen(data)) == 0) {
-#ifndef SUPPORT_EPIC
-                if (!xposed && hasDex(path)) {
-                    LOGW("%s", path);
-                    check = CHECK_ERROR;
-                    goto clean;
-                }
-#endif
-#ifdef ANTI_OVERLAY
-                LOGE("%s", path);
-                check = CHECK_FALSE;
-                goto clean;
-#else
-                if (check == CHECK_UNKNOWN) {
-                    LOGW("%s", path);
-                    check = CHECK_FALSE;
-                }
-#endif
             }
+        } else if (type == TYPE_DEX && isData(path)) {
+            bool allow;
+            LOGW("%s", path);
+            allow = xposed;
+#ifdef SUPPORT_EPIC
+            if (!allow) {
+                allow = epic;
+            }
+#endif
+            if (!allow) {
+                allow = edXposed;
+            }
+            if (!allow) {
+                check = CHECK_ERROR;
+                goto clean;
+            }
+        } else if (type == TYPE_APK && isData(path)) {
+            LOGW("%s", path);
+#ifdef ANTI_OVERLAY
+            LOGE("%s", path);
+            check = CHECK_FALSE;
+            goto clean;
+#else
+            if (check == CHECK_UNKNOWN) {
+                LOGW("%s", path);
+                check = CHECK_FALSE;
+            }
+#endif
         }
     }
 
@@ -1387,61 +1321,6 @@ clean:
     return check;
 }
 
-#ifdef SUPPORT_EPIC
-static inline bool islibepic64(const char *str) {
-    const char *dot = strrchr(str, 'l');
-    return dot != NULL
-           && *++dot == 'i'
-           && *++dot == 'b'
-           && *++dot == 'e'
-           && *++dot == 'p'
-           && *++dot == 'i'
-           && *++dot == 'c'
-           && *++dot == '6'
-           && *++dot == '4'
-           && *++dot == '.'
-           && *++dot == 's'
-           && *++dot == 'o'
-           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
-}
-
-static inline bool islibepic(const char *str) {
-    const char *dot = strrchr(str, 'l');
-    return dot != NULL
-           && *++dot == 'i'
-           && *++dot == 'b'
-           && *++dot == 'e'
-           && *++dot == 'p'
-           && *++dot == 'i'
-           && *++dot == 'c'
-           && *++dot == '.'
-           && *++dot == 's'
-           && *++dot == 'o'
-           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
-}
-
-static inline bool isEpic() {
-    FILE *fp;
-    char maps[16] = {0};
-    bool found = false;
-
-    fill_proc_self_maps(maps);
-
-    fp = fopen(maps, "r");
-    if (fp != NULL) {
-        char line[PATH_MAX];
-        while (fgets(line, PATH_MAX - 1, fp) != NULL) {
-            if (islibepic64(line) || islibepic(line)) {
-                found = true;
-                break;
-            }
-        }
-        fclose(fp);
-    }
-
-    return found;
-}
-#else
 static inline void fillThread(char map[]) {
     // java/lang/Thread
     map[0x0] = 'z';
@@ -1570,7 +1449,135 @@ static void clearHandler(JNIEnv *env) {
     }
     env->DeleteLocalRef(clazz);
 }
+
+#if 0
+static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
+    jclass classObject = env->FindClass("java/lang/Object");
+    jmethodID objectToString = env->GetMethodID(classObject, "toString", "()Ljava/lang/String;");
+    if (object == NULL) {
+        LOGI(prefix, NULL);
+    } else {
+        jstring string = (jstring) env->CallObjectMethod(object, objectToString);
+        const char *value = env->GetStringUTFChars(string, NULL);
+        LOGI(prefix, value);
+        env->ReleaseStringUTFChars(string, value);
+        env->DeleteLocalRef(string);
+    }
+    env->DeleteLocalRef(classObject);
+}
 #endif
+
+static inline void fillDisableHooks(char map[]) {
+    // disableHooks
+    map[0x0] = 'h';
+    map[0x1] = 'd';
+    map[0x2] = '}';
+    map[0x3] = 'n';
+    map[0x4] = 'r';
+    map[0x5] = '}';
+    map[0x6] = 'w';
+    map[0x7] = '[';
+    map[0x8] = 'o';
+    map[0x9] = 'n';
+    map[0xa] = 'i';
+    map[0xb] = 'p';
+    for (int i = 0; i < 0xc; ++i) {
+        map[i] ^= ((i + 0xc) % 20);
+    }
+    map[0xc] = '\0';
+}
+
+static inline void fillZ(char map[]) {
+    // Z
+    map[0x0] = '[';
+    for (int i = 0; i < 0x1; ++i) {
+        map[i] ^= ((i + 0x1) % 20);
+    }
+    map[0x1] = '\0';
+}
+
+static bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
+    char v1[0x80], v2[0x80];
+    bool antied = false;
+
+    fill_VMClassLoader(v1);
+    jclass vmClassLoader = env->FindClass(v1);
+    fill_XposedBridge(v1);
+    jstring stringXposedBridge = env->NewStringUTF(v1);
+    fill_findLoadedClass_signature(v1);
+    fill_findLoadedClass(v2);
+    jmethodID method = env->GetStaticMethodID(vmClassLoader, v2, v1);
+    jclass classXposedBridge = (jclass) env->CallStaticObjectMethod(vmClassLoader, method,
+                                                                    classLoader,
+                                                                    stringXposedBridge);
+    if (env->ExceptionCheck()) {
+        env->ExceptionClear();
+    }
+
+    if (classXposedBridge != NULL) {
+        fillDisableHooks(v1);
+        fillZ(v2);
+        jfieldID field = env->GetStaticFieldID(classXposedBridge, v1, v2);
+        env->SetStaticBooleanField(classXposedBridge, field, JNI_TRUE);
+        antied = true;
+    }
+
+    env->DeleteLocalRef(classXposedBridge);
+    env->DeleteLocalRef(stringXposedBridge);
+    env->DeleteLocalRef(vmClassLoader);
+
+    return antied;
+}
+
+static inline void fillGInjectDexClassLoader(char map[]) {
+    // gInjectDexClassLoader
+    map[0x0] = 'f';
+    map[0x1] = 'K';
+    map[0x2] = 'm';
+    map[0x3] = 'n';
+    map[0x4] = '`';
+    map[0x5] = 'e';
+    map[0x6] = 's';
+    map[0x7] = 'L';
+    map[0x8] = 'l';
+    map[0x9] = 'r';
+    map[0xa] = 'H';
+    map[0xb] = '`';
+    map[0xc] = 'l';
+    map[0xd] = '}';
+    map[0xe] = '|';
+    map[0xf] = '\\';
+    map[0x10] = '~';
+    map[0x11] = 's';
+    map[0x12] = 'w';
+    map[0x13] = 'e';
+    map[0x14] = 's';
+    for (int i = 0; i < 0x15; ++i) {
+        map[i] ^= ((i + 0x15) % 20);
+    }
+    map[0x15] = '\0';
+}
+
+static bool antiEdXposed(JNIEnv *env) {
+    bool antied = false;
+    void *handle = dlopen(NULL, RTLD_NOW);
+#ifdef DEBUG
+    LOGI("handle: %p", handle);
+#endif
+    if (handle != NULL) {
+        char v1[0x80];
+        fillGInjectDexClassLoader(v1);
+        void *inject = dlsym(handle, v1);
+#ifdef DEBUG
+        LOGI("inject: %p", inject);
+#endif
+        if (inject != NULL) {
+            antied = doAntiEdXposed(env, *((jobject *) inject));
+        }
+        dlclose(handle);
+    }
+    return antied;
+}
 
 #ifndef NELEM
 #define NELEM(x) static_cast<int>(sizeof(x) / sizeof((x)[0]))
@@ -1634,6 +1641,15 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
 #ifdef DEBUG
     LOGI("checkGenuine start");
 #endif
+
+#ifdef SUPPORT_EPIC
+    if (sdk() >= 26) {
+        epic = antiEpic(env);
+    }
+#endif
+
+    edXposed = antiEdXposed(env);
+
     genuine = checkGenuine();
 
     env->DeleteLocalRef(clazz);
@@ -1643,16 +1659,10 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
 #endif
 
     if (genuine == CHECK_ERROR) {
-#ifdef SUPPORT_EPIC
-        if (!isEpic()) {
-            return JNI_ERR;
-        }
-#else
         if (sdk() >= 26) {
             clearHandler(env);
         }
         return JNI_ERR;
-#endif
     }
 
     return JNI_VERSION_1_6;
