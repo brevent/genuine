@@ -1,1 +1,1 @@
-APP_PLATFORM := android-14
+APP_PLATFORM := android-16

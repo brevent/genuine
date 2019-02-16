@@ -18,6 +18,8 @@
 #endif
 
 #include "genuine_extra.h"
+#include "plt.h"
+
 #ifdef SUPPORT_EPIC
 #include "epic.h"
 #endif
@@ -39,13 +41,21 @@ enum {
 
 static int genuine;
 
+__attribute__ ((visibility ("internal")))
+int sdk;
+
+__attribute__ ((visibility ("internal")))
+bool throwOnError = true;
+
 static bool xposed = false;
 
 #ifdef SUPPORT_EPIC
 static bool epic = false;
 #endif
 
+#ifdef ANTI_EDXPOSED
 static bool edXposed = false;
+#endif
 
 static jmethodID original;
 
@@ -166,43 +176,6 @@ static inline jboolean checkXposed() {
     } else {
         return JNI_FALSE;
     }
-}
-
-static jmethodID *checkCallback(jmethodID value) {
-    FILE *fp;
-    char maps[16] = {0};
-
-    fill_proc_self_maps(maps);
-
-    fp = fopen(maps, "r");
-    if (fp != NULL) {
-        char line[PATH_MAX];
-        uintptr_t start;
-        uintptr_t end;
-        char perm[5];
-        int pos;
-        while (fgets(line, PATH_MAX - 1, fp) != NULL) {
-            if (sscanf(line, "%" PRIxPTR "-%" PRIxPTR " %4s %*" PRIxPTR " %*x:%*x %*d %n",
-                       &start, &end, perm, &pos) == 0x3
-                && perm[0] == 'r' && perm[1] == 'w'
-                && islibartso(line + pos)) {
-                for (jmethodID *s = reinterpret_cast<jmethodID *>(start); s < reinterpret_cast<jmethodID *>(end); ++s) {
-                    if (*s == value) {
-                        fclose(fp);
-                        return s;
-                    }
-                }
-            }
-        }
-        fclose(fp);
-    }
-    return NULL;
-}
-
-static int sdk() {
-    char sdk[PROP_VALUE_MAX] = {0};
-    __system_property_get("ro.build.version.sdk", sdk);
-    return atoi(sdk);
 }
 
 static inline void fill_classLoader$SystemClassLoader(char v[]) {
@@ -920,30 +893,23 @@ static jboolean antiXposed(JNIEnv *env, jclass clazz) {
     fill_handleHookedMethod(v2);
     jmethodID hooked = env->GetStaticMethodID(classXposedBridge, v2, v1);
 
-    jmethodID *xposedCallbackMethod = NULL;
-    void *handle = dlopen(NULL, RTLD_NOW);
-    if (sdk() < 23) {
+    Symbol symbol;
+    if (sdk < 23) {
         fill_xposed_callback_method_l(v1);
     } else {
         fill_xposed_callback_method_m(v1);
     }
-    xposedCallbackMethod = reinterpret_cast<jmethodID *>(dlsym(handle, v1));
-    dlclose(handle);
+    dl_iterate_phdr_symbol(&symbol, v1);
+
+    jmethodID *xposedCallbackMethod = reinterpret_cast<jmethodID *>(symbol.symbol_sym);
+#ifdef DEBUG
+    LOGI("xposed_callback_method: %p", xposedCallbackMethod);
+#endif
     if (xposedCallbackMethod != NULL && *xposedCallbackMethod == hooked) {
         *xposedCallbackMethod = replace;
         result = JNI_TRUE;
         goto clean;
     }
-
-    xposedCallbackMethod = checkCallback(hooked);
-    if (xposedCallbackMethod != NULL) {
-        *xposedCallbackMethod = replace;
-        result = JNI_TRUE;
-        goto clean;
-    }
-
-    // FIXME: log "cannot disable xposed hooks"
-    // FIXME: log "add libart.so to /system/etc/public.libraries.txt"
 
 clean:
     env->DeleteLocalRef(classXposedBridge);
@@ -1208,8 +1174,6 @@ enum {
     TYPE_DEX,
 };
 
-
-
 static int checkGenuine() {
     FILE *fp;
     char maps[16] = {0};
@@ -1289,9 +1253,11 @@ static int checkGenuine() {
                 allow = epic;
             }
 #endif
+#ifdef ANTI_EDXPOSED
             if (!allow) {
                 allow = edXposed;
             }
+#endif
             if (!allow) {
                 check = CHECK_ERROR;
                 goto clean;
@@ -1467,6 +1433,7 @@ static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
 }
 #endif
 
+#ifdef ANTI_EDXPOSED
 static inline void fillDisableHooks(char map[]) {
     // disableHooks
     map[0x0] = 'h';
@@ -1578,6 +1545,39 @@ static bool antiEdXposed(JNIEnv *env) {
     }
     return antied;
 }
+#endif
+
+static inline void fill_jniRegisterNativeMethods(char v[]) {
+    // jniRegisterNativeMethods
+    v[0x0] = 'n';
+    v[0x1] = 'k';
+    v[0x2] = 'o';
+    v[0x3] = 'U';
+    v[0x4] = 'm';
+    v[0x5] = 'n';
+    v[0x6] = 'c';
+    v[0x7] = 'x';
+    v[0x8] = 'x';
+    v[0x9] = 'h';
+    v[0xa] = '|';
+    v[0xb] = 'A';
+    v[0xc] = 'q';
+    v[0xd] = 'e';
+    v[0xe] = '{';
+    v[0xf] = 'e';
+    v[0x10] = 'e';
+    v[0x11] = 'L';
+    v[0x12] = 'g';
+    v[0x13] = 'w';
+    v[0x14] = 'l';
+    v[0x15] = 'j';
+    v[0x16] = 'b';
+    v[0x17] = 't';
+    for (int i = 0; i < 0x18; ++i) {
+        v[i] ^= ((i + 0x18) % 20);
+    }
+    v[0x18] = '\0';
+}
 
 #ifndef NELEM
 #define NELEM(x) static_cast<int>(sizeof(x) / sizeof((x)[0]))
@@ -1605,6 +1605,10 @@ static JNINativeMethod methods[] = {
 jint JNI_OnLoad(JavaVM *jvm, void *) {
     JNIEnv *env;
     jclass clazz;
+    char prop[PROP_VALUE_MAX] = {0};
+
+    __system_property_get("ro.build.version.sdk", prop);
+    sdk = atoi(prop);
 
 #ifdef DEBUG
     LOGI("JNI_OnLoad start");
@@ -1643,23 +1647,35 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
 #endif
 
 #ifdef SUPPORT_EPIC
-    if (sdk() >= 26) {
+    if (sdk >= 26) {
         epic = antiEpic(env);
     }
 #endif
 
-    edXposed = antiEdXposed(env);
+#ifdef ANTI_EDXPOSED
+    if (sdk >= 23) {
+        edXposed = antiEdXposed(env);
+    }
+#endif
 
     genuine = checkGenuine();
+    if (genuine == CHECK_TRUE) {
+        char v[0x80];
+        Symbol symbol;
+        fill_jniRegisterNativeMethods(v);
+        if (dl_iterate_phdr_symbol(&symbol, v)) {
+            genuine = CHECK_FALSE;
+        }
+    }
 
     env->DeleteLocalRef(clazz);
 
 #ifdef DEBUG
-    LOGI("JNI_OnLoad end, genuine: %d", genuine);
+    LOGI("JNI_OnLoad end, genuine: %d, onError: %d", genuine, throwOnError);
 #endif
 
-    if (genuine == CHECK_ERROR) {
-        if (sdk() >= 26) {
+    if (sdk >= 24 && throwOnError && genuine == CHECK_ERROR) {
+        if (sdk >= 26) {
             clearHandler(env);
         }
         return JNI_ERR;
