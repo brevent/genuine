@@ -9,13 +9,6 @@
 #include <link.h>
 #include <android/log.h>
 
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-
-#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-
 #ifdef __cplusplus
 extern "C" {
 #endif

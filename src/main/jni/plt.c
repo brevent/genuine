@@ -6,8 +6,24 @@
 #include <string.h>
 #include <stdbool.h>
 #include <dlfcn.h>
-#include "genuine.h"
 #include "plt.h"
+
+#if __has_include("genuine.h")
+#include "genuine.h"
+#endif
+
+#ifndef TAG
+#define TAG "Genuine"
+#endif
+#ifndef LOGI
+#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
+#endif
+#ifndef LOGW
+#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
+#endif
+#ifndef LOGE
+#define LOGE(...) (__android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
+#endif
 
 /*
  * reference: https://android.googlesource.com/platform/bionic/+/master/linker/linker_soinfo.cpp
@@ -211,10 +227,10 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
 #endif
     for (ElfW(Half) phdr_idx = 0; phdr_idx < info->dlpi_phnum; ++phdr_idx) {
         ElfW(Phdr) phdr = info->dlpi_phdr[phdr_idx];
-        ElfW(Dyn) *base_addr = (ElfW(Dyn) *) (info->dlpi_addr + phdr.p_vaddr);
         if (phdr.p_type != PT_DYNAMIC) {
             continue;
         }
+        ElfW(Dyn) *base_addr = (ElfW(Dyn) *) (info->dlpi_addr + phdr.p_vaddr);
         ElfW(Addr) *addr;
         addr = find_plt(info, base_addr, symbol->symbol);
         if (addr != NULL) {

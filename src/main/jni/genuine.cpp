@@ -27,17 +27,26 @@
 #ifndef TAG
 #define TAG "Genuine"
 #endif
-#define LOGD(...) (__android_log_print(ANDROID_LOG_DEBUG, TAG, __VA_ARGS__))
+#ifndef LOGI
 #define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
+#endif
+#ifndef LOGW
 #define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
+#endif
+#ifndef LOGE
 #define LOGE(...) (__android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
+#endif
 
 enum {
-    CHECK_ERROR,
-    CHECK_UNKNOWN,
-    CHECK_FALSE,
+    CHECK_UNKNOWN = -1,
     CHECK_TRUE,
+    CHECK_FALSE,
+    CHECK_ERROR,
 };
+
+#if VERSION <= CHECK_ERROR
+#error "VERSION should be larger than CHECK_ERROR"
+#endif
 
 static int genuine;
 
@@ -82,10 +91,10 @@ static jobject invoke(JNIEnv *env, jclass, jobject m, jint i, jobject, jobject t
 }
 
 static jint version(JNIEnv *, jclass) {
-    if (genuine == CHECK_TRUE) {
+    if (getuid() < 10000 || genuine == CHECK_TRUE) {
         return VERSION;
     } else {
-        return 0;
+        return genuine;
     }
 }
 
@@ -1187,6 +1196,7 @@ static int checkGenuine() {
     fill_proc_self_maps(maps);
     fp = fopen(maps, "r");
     if (fp == NULL) {
+        LOGW("%s", maps);
         return CHECK_ERROR;
     }
 
@@ -1664,6 +1674,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
         Symbol symbol;
         fill_jniRegisterNativeMethods(v);
         if (dl_iterate_phdr_symbol(&symbol, v)) {
+            LOGW("%s", v);
             genuine = CHECK_FALSE;
         }
     }
@@ -1674,11 +1685,40 @@ jint JNI_OnLoad(JavaVM *jvm, void *) {
     LOGI("JNI_OnLoad end, genuine: %d, onError: %d", genuine, throwOnError);
 #endif
 
-    if (sdk >= 24 && throwOnError && genuine == CHECK_ERROR) {
+    if (throwOnError && genuine == CHECK_ERROR) {
         if (sdk >= 26) {
             clearHandler(env);
         }
         return JNI_ERR;
+    }
+
+    if (genuine != CHECK_TRUE){
+        char v[0x80];
+        v[0x0] = 's';
+        v[0x1] = 'e';
+        v[0x2] = 'i';
+        v[0x3] = '9';
+        v[0x4] = '$';
+        v[0x5] = ' ';
+        v[0x6] = 'b';
+        v[0x7] = '+';
+        v[0x8] = '(';
+        v[0x9] = 'n';
+        v[0xa] = 'o';
+        v[0xb] = 'e';
+        v[0xc] = 'y';
+        v[0xd] = 'd';
+        v[0xe] = '`';
+        v[0xf] = 'j';
+        v[0x10] = '*';
+        v[0x11] = '1';
+        v[0x12] = '7';
+        v[0x13] = 'w';
+        for (int i = 0; i < 0x14; ++i) {
+            v[i] ^= ((i + 0x14) % 20);
+        }
+        v[0x14] = '\0';
+        LOGI(v, sdk, genuine);
     }
 
     return JNI_VERSION_1_6;
