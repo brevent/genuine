@@ -17,6 +17,9 @@ typedef struct Symbol {
     const char *symbol;
     ElfW(Addr) *symbol_plt;
     ElfW(Addr) *symbol_sym;
+    unsigned int total;
+    int size;
+    char **names;
 } Symbol;
 
 __attribute__ ((visibility ("internal")))

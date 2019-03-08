@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <dlfcn.h>
 #include "plt.h"
 
@@ -55,7 +56,7 @@ static ElfW(Dyn) *find_dyn_by_tag(ElfW(Dyn) *dyn, ElfW(Sxword) tag) {
         if (dyn->d_tag == tag) {
             return dyn;
         }
-        dyn++;
+        ++dyn;
     }
     return NULL;
 }
@@ -220,11 +221,24 @@ static ElfW(Addr) *find_plt(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, con
     return NULL;
 }
 
+static inline bool issystem(const char *str) {
+    return str != NULL
+           && *str == '/'
+           && *++str == 's'
+           && *++str == 'y'
+           && *++str == 's'
+           && *++str == 't'
+           && *++str == 'e'
+           && *++str == 'm'
+           && *++str == '/';
+}
+
 static int callback(struct dl_phdr_info *info, __unused size_t size, void *data) {
     Symbol *symbol = (Symbol *) data;
 #if 0
     LOGI("Name: \"%s\" (%d segments)", info->dlpi_name, info->dlpi_phnum);
 #endif
+    ++symbol->total;
     for (ElfW(Half) phdr_idx = 0; phdr_idx < info->dlpi_phnum; ++phdr_idx) {
         ElfW(Phdr) phdr = info->dlpi_phdr[phdr_idx];
         if (phdr.p_type != PT_DYNAMIC) {
@@ -246,6 +260,19 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                 }
             }
             symbol->symbol_plt = addr;
+            if (!issystem(info->dlpi_name)) {
+                if (symbol->size == 0) {
+                    symbol->size = 1;
+                    symbol->names = calloc(1, sizeof(char *));
+                } else {
+                    ++symbol->size;
+                    symbol->names = realloc(symbol->names, symbol->size * sizeof(char *));
+                }
+#ifdef DEBUG
+                LOGI("[%d]: %s", symbol->size - 1, info->dlpi_name);
+#endif
+                symbol->names[symbol->size - 1] = strdup(info->dlpi_name);
+            }
         }
         addr = find_symbol(info, base_addr, symbol->symbol);
         if (addr != NULL) {
@@ -267,26 +294,33 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
 }
 
 int dl_iterate_phdr_symbol(Symbol *symbol, const char *name) {
+    int result;
+#ifdef DEBUG_PLT
+    LOGI("start dl_iterate_phdr: %s", name);
+#endif
     memset(symbol, 0, sizeof(Symbol));
     symbol->symbol = name;
 #if __ANDROID_API__ >= 21 || !defined(__arm__)
-    return dl_iterate_phdr(callback, symbol);
+    result = dl_iterate_phdr(callback, symbol);
 #else
     int (*dl_iterate_phdr)(int (*)(struct dl_phdr_info *, size_t, void *), void *);
     dl_iterate_phdr = dlsym(RTLD_NEXT, "dl_iterate_phdr");
     if (dl_iterate_phdr != NULL) {
-        return dl_iterate_phdr(callback, symbol);
+        result = dl_iterate_phdr(callback, symbol);
     } else {
-        int value = 0;
+        result = 0;
         void *handle = dlopen("libdl.so", RTLD_NOW);
         dl_iterate_phdr = dlsym(handle, "dl_iterate_phdr");
         if (dl_iterate_phdr != NULL) {
-            value = dl_iterate_phdr(callback, symbol);
+            result = dl_iterate_phdr(callback, symbol);
         } else {
             LOGW("cannot dlsym dl_iterate_phdr");
         }
         dlclose(handle);
-        return value;
     }
 #endif
+#ifdef DEBUG_PLT
+    LOGI("complete dl_iterate_phdr: %s", name);
+#endif
+    return result;
 }
