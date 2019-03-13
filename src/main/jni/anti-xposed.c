@@ -1116,7 +1116,6 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, const char *maps, int sdk, bool *
 #ifdef DEBUG
     LOGI("found Xposed");
 #endif
-    *xposed = true;
 
     fill_java_lang_ClassLoader$SystemClassLoader(v1);
     jclass classLoader$SystemClassLoader = (*env)->FindClass(env, v1);
@@ -1145,6 +1144,10 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, const char *maps, int sdk, bool *
                                                               systemClassLoader,
                                                               stringXposedBridge);
 
+    if (classXposedBridge == NULL) {
+        goto clean;
+    }
+
     fill_invokeOriginalMethodNative(v1);
     fill_invokeOriginalMethodNative_signature(v2);
     original = (*env)->GetStaticMethodID(env, classXposedBridge, v1, v2);
@@ -1161,6 +1164,7 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, const char *maps, int sdk, bool *
     LOGI("xposed_callback_method: %p", xposedCallbackMethod);
 #endif
     if (xposedCallbackMethod != NULL && *xposedCallbackMethod == hooked) {
+        *xposed = true;
         *xposedCallbackMethod = replace;
         result = JNI_TRUE;
         goto clean;

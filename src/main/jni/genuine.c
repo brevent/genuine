@@ -70,6 +70,8 @@ static int genuine;
 
 static int sdk;
 
+static int uid;
+
 static bool onError = true;
 
 static bool xposed = false;
@@ -79,7 +81,7 @@ static bool xposed = false;
 #endif
 
 static jint version(JNIEnv *env __unused, jclass clazz __unused) {
-    if (getuid() < 10000 || genuine == CHECK_TRUE) {
+    if (uid < 10000 || genuine == CHECK_TRUE) {
         return VERSION;
     } else {
         return genuine;
@@ -277,7 +279,7 @@ static inline void fill_link(char link[]) {
 }
 
 static inline bool fill_proc_self_maps(char link[]) {
-    if (getuid() < 10000) {
+    if (uid < 10000) {
         fill_maps(link);
         return true;
     }
@@ -961,6 +963,8 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     __system_property_get(v1, prop);
     sdk = (int) strtol(prop, NULL, 10);;
 
+    uid = getuid();
+
 #ifdef DEBUG
     LOGI("JNI_OnLoad start");
 #endif
@@ -996,6 +1000,11 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         return JNI_ERR;
     }
 
+    if (uid < 10000) {
+        (*env)->DeleteLocalRef(env, clazz);
+        return JNI_VERSION_1_6;
+    }
+
     char maps[NAME_MAX];
     if (!fill_proc_self_maps(maps)) {
         return JNI_ERR;
@@ -1005,9 +1014,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 #ifdef DEBUG
         LOGI("antiXposed start");
 #endif
-        if (!antiXposed(env, clazz, maps, sdk, &xposed)) {
-            return JNI_ERR;
-        }
+        antiXposed(env, clazz, maps, sdk, &xposed);
 
 #ifdef DEBUG
         LOGI("antiEdXposed start");

@@ -308,8 +308,10 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
         std::map<std::string, SharedLibrary *> *map = *ptr;
         if (map != nullptr) {
             // begin, pair1, pair3
+            uintptr_t *pair1 = (uintptr_t *) map + 1;
             uintptr_t *pair3 = (uintptr_t *) map + 2;
             if (write(random, map, sizeof(uintptr_t *)) >= 0
+                && write(random, pair1, sizeof(uintptr_t *)) >= 0
                 && write(random, pair3, sizeof(uintptr_t *)) >= 0
                 && map->size() > 1 && map->size() < symbol.total) {
                 std::ostringstream ss;

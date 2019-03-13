@@ -356,8 +356,12 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
     for (int i = 0; i < 42; ++i, ++ptr) {
         map *map = *ptr;
         if (map != NULL) {
-            // begin, end, size
+            // begin, pair1, pair3
+            uintptr_t *pair1 = (uintptr_t *) map + 1;
+            uintptr_t *pair3 = (uintptr_t *) map + 2;
             if (write(random, map, sizeof(uintptr_t *)) >= 0
+                && write(random, pair1, sizeof(uintptr_t *)) >= 0
+                && write(random, pair3, sizeof(uintptr_t *)) >= 0
                 && map->size > 1 && map->size < symbol.total) {
 #ifdef DEBUG
                 LOGI("found libraries_ on jvm+0x%x, jvm: %p, libraries_: %p -> %p",
