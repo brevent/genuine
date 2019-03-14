@@ -7,8 +7,10 @@
 #include <jni.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <malloc.h>
 #include "genuine.h"
 #include "plt.h"
+#include "libraries-mock.h"
 
 #ifndef TAG
 #define TAG "Genuine"
@@ -21,14 +23,44 @@
 #define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
 #endif
 
-#ifdef GENUINE_NO_STL
-#if defined(SUPPORT_EPIC) || defined(CHECK_SO_LIBRARY)
+#if (defined(SUPPORT_EPIC) || defined(CHECK_SO_LIBRARY)) && defined(GENUINE_NO_STL)
 
-typedef struct string {
+typedef struct l {
     size_t cap __unused;
     size_t size __unused;
     char *data;
+} l;
+
+typedef struct s {
+    unsigned char size;
+    char data[sizeof(l) - sizeof(unsigned char)];
+} s;
+
+typedef struct string {
+    union {
+        l l;
+        s s;
+    };
 } string;
+
+#include <endian.h>
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define SHORT_MASK 0x01U
+#elif BYTE_ORDER == BIG_ENDIAN
+#define SHORT_MASK 0x80U
+#else
+#error "invalid byte order"
+#endif
+
+static char *get_data(string *string) {
+    unsigned char size = string->s.size;
+    if ((size & SHORT_MASK)) {
+        return string->l.data;
+    } else {
+        return string->s.data;
+    }
+}
 
 struct tree;
 
@@ -347,6 +379,15 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
         return NULL;
     }
 
+#ifdef DUMP_JVM
+    char *dump = dump_jvm(jvm, &symbol);
+    bool safe = dump != NULL && strstr(dump, name) == NULL;
+    free(dump);
+    if (safe) {
+        return NULL;
+    }
+#endif
+
     fill_dev_random(v);
     int random = open(v, (unsigned) O_WRONLY | (unsigned) O_CLOEXEC);
 
@@ -382,13 +423,14 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
 #ifdef DEBUG
             LOGI("tree: %p, path: %s, loader: %p", t, t->first.data, t->second);
 #endif
-            if (t->first.data != NULL) {
-                if (strstr(t->first.data, name) != NULL && t->second != NULL) {
+            char *data = get_data(&(t->first));
+            if (data != NULL) {
+                if (strstr(data, name) != NULL && t->second != NULL) {
                     jobject classLoader = checkClassLoader(env, sdk, (SharedLibrary *) t->second);
                     if (classLoader != NULL) {
                         return classLoader;
                     }
-                } else if (issystem(t->first.data)) {
+                } else if (issystem(data)) {
                     break;
                 }
             }
@@ -403,5 +445,4 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
     return NULL;
 }
 
-#endif
 #endif
