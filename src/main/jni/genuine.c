@@ -55,6 +55,7 @@ enum {
     CHECK_UNKNOWN = -1,
     CHECK_TRUE,
     CHECK_FALSE,
+    CHECK_FAKE,
     CHECK_ERROR,
 };
 
@@ -72,7 +73,7 @@ static int sdk;
 
 static int uid;
 
-static bool onError = true;
+static bool onError = false;
 
 static bool xposed = false;
 
@@ -633,7 +634,7 @@ static inline int checkGenuine(const char *maps) {
                 } else {
                     if (checkSignature(path)) {
                         LOGE(path);
-                        check = CHECK_FALSE;
+                        check = CHECK_FAKE;
                     } else {
 #ifdef DEBUG
                         LOGI(path);
@@ -981,7 +982,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     free(genuineClassName);
 #endif
 
-    static JNINativeMethod methods[1];
+    JNINativeMethod methods[1];
     fill_version(v1); // v1: 0x8
     methods[0].name = strdup(v1);
 
@@ -1006,8 +1007,10 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     }
 
     char maps[NAME_MAX];
+    bool safe = true;
     if (!fill_proc_self_maps(maps)) {
-        return JNI_ERR;
+        fill_maps(maps);
+        safe = false;
     }
 
     if (sdk >= 21) {
@@ -1034,6 +1037,9 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     LOGI("checkGenuine start");
 #endif
     genuine = checkGenuine(maps);
+    if (genuine == CHECK_TRUE && !safe) {
+        genuine = CHECK_FALSE;
+    }
 
 #ifdef CHECK_JNI_REGISTER_NATIVE_METHODS
     if (genuine == CHECK_TRUE) {
