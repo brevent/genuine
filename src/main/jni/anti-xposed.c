@@ -1082,14 +1082,14 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, const char *maps, int sdk, bool *
     jboolean result = JNI_FALSE;
     char v1[0x80], v2[0x80];
 
-    static JNINativeMethod methods[1];
+    JNINativeMethod methods[1];
     fill_invoke(v1);
     fill_invoke_signature(v2);
     methods[0].name = strdup(v1);
     methods[0].signature = strdup(v2);
     methods[0].fnPtr = invoke;
 
-    if ((*env)->RegisterNatives(env, clazz, methods, NELEM(methods)) < 0) {
+    if ((*env)->RegisterNatives(env, clazz, methods, 1) < 0) {
         return JNI_FALSE;
     }
 

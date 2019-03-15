@@ -81,7 +81,7 @@ static bool xposed = false;
 #endif
 
 static jint version(JNIEnv *env, jclass clazz __unused) {
-    if (uid < 1000) {
+    if (uid < 10000) {
         return VERSION;
     } else if (genuine == CHECK_TRUE) {
         if (isAmProxy(env, sdk)) {
@@ -1059,10 +1059,8 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         return JNI_ERR;
     }
 
-    if (genuine != CHECK_TRUE) {
-        fill_sdk_d_genuine_d(v1); // 0x15
-        LOGI(v1, sdk, genuine);
-    }
+    fill_sdk_d_genuine_d(v1); // 0x15
+    LOGI(v1, sdk, genuine);
 
     return JNI_VERSION_1_6;
 }
