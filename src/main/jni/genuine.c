@@ -490,6 +490,9 @@ static inline int checkOdex(const char *path) {
 
 static inline bool isSameFile(const char *path1, const char *path2) {
     struct stat stat1, stat2;
+    if (path1 == NULL || path2 == NULL) {
+        return false;
+    }
     if (lstat(path1, &stat1)) {
         return false;
     }
@@ -630,18 +633,11 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
 #ifdef DEBUG
                 LOGI("check %s", path);
 #endif
-                if (!isSameFile(path, packagePath)) {
-                    if (checkSignature(path)) {
-                        LOGE(path);
-                        check = CHECK_FAKE;
-                    } else {
-#ifdef DEBUG
-                        LOGI(path);
-#endif
-                        if (check == CHECK_UNKNOWN) {
-                            check = CHECK_TRUE;
-                        }
-                    }
+                if (!isSameFile(path, packagePath) && checkSignature(path)) {
+                    LOGE(path);
+                    check = CHECK_FAKE;
+                } else if (check == CHECK_UNKNOWN) {
+                    check = CHECK_TRUE;
                 }
             } else if (type == TYPE_DEX) {
 #ifdef ANTI_ODEX
@@ -674,10 +670,6 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
 #endif
             }
         }
-    }
-
-    if (check == CHECK_UNKNOWN) {
-        check = CHECK_TRUE;
     }
 
     fclose(fp);
