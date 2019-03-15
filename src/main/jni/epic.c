@@ -1,7 +1,7 @@
 #include "epic.h"
 #include "libraries.h"
 
-#ifdef SUPPORT_EPIC
+#ifdef CHECK_XPOSED_EPIC
 
 #ifdef DEBUG
 

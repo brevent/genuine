@@ -260,7 +260,7 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                 }
             }
             symbol->symbol_plt = addr;
-            if (!issystem(info->dlpi_name)) {
+            if (symbol->size != -1 && !issystem(info->dlpi_name)) {
                 if (symbol->size == 0) {
                     symbol->size = 1;
                     symbol->names = calloc(1, sizeof(char *));
@@ -298,8 +298,11 @@ int dl_iterate_phdr_symbol(Symbol *symbol, const char *name) {
 #ifdef DEBUG_PLT
     LOGI("start dl_iterate_phdr: %s", name);
 #endif
-    memset(symbol, 0, sizeof(Symbol));
-    symbol->symbol = name;
+    if (name != NULL) {
+        memset(symbol, 0, sizeof(Symbol));
+        symbol->size = -1;
+        symbol->symbol = name;
+    }
 #if __ANDROID_API__ >= 21 || !defined(__arm__)
     result = dl_iterate_phdr(callback, symbol);
 #else

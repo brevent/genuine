@@ -95,6 +95,35 @@ public class SimpleApkV2 {
         int[] sizeAndHash = getApkSignV2(args[1]);
         System.out.format("#define GENUINE_SIZE 0x%04x%n", sizeAndHash[0]);
         System.out.format("#define GENUINE_HASH 0x%04x%n", sizeAndHash[1] ^ 0x14131211);
+        String extra = "\n" +
+                "// #define GET_GENUINE_CLASS_NAME function_name_for_get_genuine_class_name\n" +
+                "// #define GET_GENUINE_PACKAGE_NAME function_name_for_get_genuine_package_name\n" +
+                "\n" +
+                "/* define to turn off maps check */\n" +
+                "// #define NO_CHECK_MAPS\n" +
+                "\n" +
+                "#ifndef NO_CHECK_MAPS\n" +
+                "/* define to anti odex */\n" +
+                "// #define ANTI_ODEX\n" +
+                "\n" +
+                "/* define to anti overlay */\n" +
+                "// #define ANTI_OVERLAY\n" +
+                "#endif\n" +
+                "\n" +
+                "/* define to check plt hook for jniRegisterNativeMethods */\n" +
+                "// #define CHECK_JNI_REGISTER_NATIVE_METHODS\n" +
+                "\n" +
+                "/* define to turn off xposed check */\n" +
+                "// #define NO_CHECK_XPOSED\n" +
+                "\n" +
+                "/* define to turn off xposed-edxposed check */\n" +
+                "// #define NO_CHECK_XPOSED_EDXPOSED\n" +
+                "\n" +
+                "/* define to turn on xposed-epic check\n" +
+                " * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en\n" +
+                " */\n" +
+                "// #define CHECK_XPOSED_EPIC\n";
+        System.out.print(extra);
     }
 
 }

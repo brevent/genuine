@@ -21,12 +21,13 @@
 #include "anti-xposed.h"
 #include "apk-sign-v2.h"
 #include "genuine_extra.h"
+#include "epic.h"
+#include "am-proxy.h"
+#include "pm.h"
 
 #ifdef CHECK_MOUNT
 #include "mount.h"
 #endif
-
-#include "epic.h"
 
 #ifndef TAG
 #define TAG "Genuine"
@@ -56,6 +57,10 @@ enum {
     CHECK_TRUE,
     CHECK_FALSE,
     CHECK_FAKE,
+    CHECK_OVERLAY,
+    CHECK_ODEX,
+    CHECK_DEX,
+    CHECK_PROXY,
     CHECK_ERROR,
 };
 
@@ -63,11 +68,7 @@ enum {
 #error "VERSION should be larger than CHECK_ERROR"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-static int genuine;
+static int genuine = CHECK_UNKNOWN;
 
 static int sdk;
 
@@ -75,15 +76,19 @@ static int uid;
 
 static bool onError = false;
 
+#ifndef NO_CHECK_XPOSED
 static bool xposed = false;
-
-#ifdef __cplusplus
-}
 #endif
 
-static jint version(JNIEnv *env __unused, jclass clazz __unused) {
-    if (uid < 10000 || genuine == CHECK_TRUE) {
+static jint version(JNIEnv *env, jclass clazz __unused) {
+    if (uid < 1000) {
         return VERSION;
+    } else if (genuine == CHECK_TRUE) {
+        if (isAmProxy(env, sdk)) {
+            return CHECK_PROXY;
+        } else {
+            return VERSION;
+        }
     } else {
         return genuine;
     }
@@ -322,6 +327,8 @@ static inline bool fill_proc_self_maps(char link[]) {
     return true;
 }
 
+#ifndef NO_CHECK_MAPS
+
 static inline void fill_r(char v[]) {
     static unsigned int m = 0;
 
@@ -481,7 +488,7 @@ static inline int checkOdex(const char *path) {
 }
 #endif
 
-static inline bool isSameFile(char *path1, char *path2) {
+static inline bool isSameFile(const char *path1, const char *path2) {
     struct stat stat1, stat2;
     if (lstat(path1, &stat1)) {
         return false;
@@ -550,16 +557,17 @@ enum {
     TYPE_SO,
 };
 
-static inline int checkGenuine(const char *maps) {
+static inline int checkMaps(const char *maps, const char *packageName, const char *packagePath) {
     FILE *fp;
-    char apk[NAME_MAX] = {0};
     char line[PATH_MAX];
-    int check = CHECK_UNKNOWN;
+    int check = genuine;
 
     Symbol symbol;
-    char d[0x10];
+    char *d = calloc(1, 0x10);
     fill_ba88(d);
-    if (dl_iterate_phdr_symbol(&symbol, d)) {
+    memset(&symbol, 0, sizeof(Symbol));
+    symbol.symbol = d;
+    if (dl_iterate_phdr_symbol(&symbol, NULL)) {
         LOGE(d);
         check = CHECK_ERROR;
         goto clean2;
@@ -578,13 +586,12 @@ static inline int checkGenuine(const char *maps) {
 
     fp = fopen(maps, mode);
     if (fp == NULL) {
-        fill_maps(apk);
-        LOGW(apk);
+        fill_maps(line);
+        LOGW(line);
         check = CHECK_ERROR;
         goto clean2;
     }
 
-    char *genuinePackageName = getGenuinePackageName();
     while (fgets(line, PATH_MAX - 1, fp) != NULL) {
         int type;
         char *path = line;
@@ -618,20 +625,12 @@ static inline int checkGenuine(const char *maps) {
         } else {
             type = TYPE_NON;
         }
-        if (strstr(path, genuinePackageName) != NULL) {
-            if (type == TYPE_APK && access(path, F_OK) == 0) {
+        if (strstr(path, packageName) != NULL && access(path, F_OK) == 0) {
+            if (type == TYPE_APK) {
 #ifdef DEBUG
                 LOGI("check %s", path);
 #endif
-                if (apk[0] != 0) {
-                    if (!strcmp(path, apk) || isSameFile(path, apk)) {
-                        check = CHECK_TRUE;
-                    } else {
-                        LOGE(path);
-                        LOGE(apk);
-                        check = CHECK_FALSE;
-                    }
-                } else {
+                if (!isSameFile(path, packagePath)) {
                     if (checkSignature(path)) {
                         LOGE(path);
                         check = CHECK_FAKE;
@@ -639,8 +638,9 @@ static inline int checkGenuine(const char *maps) {
 #ifdef DEBUG
                         LOGI(path);
 #endif
-                        check = CHECK_TRUE;
-                        strcpy(apk, path);
+                        if (check == CHECK_UNKNOWN) {
+                            check = CHECK_TRUE;
+                        }
                     }
                 }
             } else if (type == TYPE_DEX) {
@@ -648,27 +648,31 @@ static inline int checkGenuine(const char *maps) {
 #ifdef DEBUG
                 LOGI("check %s", path);
 #endif
-                if (access(path, F_OK) == 0 && checkOdex(path)) {
+                if (checkOdex(path)) {
                     LOGE(path);
-                    check = JNI_FALSE;
-                    break;
+                    check = CHECK_ODEX;
                 }
 #endif
             }
-        } else if (type == TYPE_DEX && isData(path)) {
-            if (xposed) {
-                LOGW(path);
-            } else {
+        } else if (isData(path)) {
+            if (type == TYPE_DEX) {
+#ifndef NO_CHECK_XPOSED
+                if (xposed) {
+                    LOGW(path);
+                } else {
+                    LOGE(path);
+                    check = CHECK_DEX;
+                }
+#else
                 LOGE(path);
-                check = CHECK_ERROR;
-                goto clean;
-            }
-        } else if (type == TYPE_APK && isData(path)) {
-#ifdef ANTI_OVERLAY
-            LOGE(path);
-            check = CHECK_FALSE;
-            goto clean;
+                check = CHECK_DEX;
 #endif
+            } else if (type == TYPE_APK) {
+#ifdef ANTI_OVERLAY
+                LOGE(path);
+                check = CHECK_OVERLAY;
+#endif
+            }
         }
     }
 
@@ -676,10 +680,6 @@ static inline int checkGenuine(const char *maps) {
         check = CHECK_TRUE;
     }
 
-clean:
-#ifdef GENUINE_NAME
-    free(genuinePackageName);
-#endif
     fclose(fp);
 
 clean2:
@@ -695,25 +695,10 @@ clean2:
         free(symbol.names);
         symbol.names = NULL;
     }
+    free(d);
 
     unlink(maps);
     return check;
-}
-
-#if 0
-static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
-    jclass classObject = (*env)->FindClass(env, "java/lang/Object");
-    jmethodID objectToString = (*env)->GetMethodID(env, classObject, "toString", "()Ljava/lang/String;");
-    if (object == NULL) {
-        LOGI(prefix, NULL);
-    } else {
-        jstring string = (jstring) (*env)->CallObjectMethod(env, object, objectToString);
-        const char *value = (*env)->GetStringUTFChars(env, string, NULL);
-        LOGI(prefix, value);
-        (*env)->ReleaseStringUTFChars(env, string, value);
-        (*env)->DeleteLocalRef(env, string);
-    }
-    (*env)->DeleteLocalRef(env, classObject);
 }
 #endif
 
@@ -1007,24 +992,30 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     }
 
     char maps[NAME_MAX];
-    bool safe = true;
     if (!fill_proc_self_maps(maps)) {
         fill_maps(maps);
-        safe = false;
+        genuine = CHECK_FALSE;
     }
 
     if (sdk >= 21) {
+#ifndef NO_CHECK_XPOSED
 #ifdef DEBUG
         LOGI("antiXposed start");
 #endif
         antiXposed(env, clazz, maps, sdk, &xposed);
+#endif
 
+#ifndef NO_CHECK_XPOSED_EDXPOSED
 #ifdef DEBUG
         LOGI("antiEdXposed start");
 #endif
         antiEdXposed(env);
+#endif
 
-#ifdef SUPPORT_EPIC
+#ifdef CHECK_XPOSED_EPIC
+#ifdef DEBUG
+        LOGI("antiEpic start");
+#endif
         antiEpic(env, sdk);
 #endif
     }
@@ -1033,13 +1024,26 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     checkMount(maps);
 #endif
 
-#ifdef DEBUG
-    LOGI("checkGenuine start");
-#endif
-    genuine = checkGenuine(maps);
-    if (genuine == CHECK_TRUE && !safe) {
-        genuine = CHECK_FALSE;
+    char *packageName = getGenuinePackageName();
+    char *packagePath = getPath(env, uid, packageName);
+    if (packagePath != NULL && checkSignature(packagePath)) {
+        LOGE(packagePath);
+        genuine = CHECK_FAKE;
     }
+
+#ifndef NO_CHECK_MAPS
+#ifdef DEBUG
+    LOGI("checkMaps start");
+#endif
+    if (genuine != CHECK_FAKE) {
+        genuine = checkMaps(maps, packageName, packagePath);
+    }
+#endif
+
+#ifdef GENUINE_NAME
+    free(packageName);
+#endif
+    free(packagePath);
 
 #ifdef CHECK_JNI_REGISTER_NATIVE_METHODS
     if (genuine == CHECK_TRUE) {
@@ -1058,7 +1062,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     LOGI("JNI_OnLoad end, genuine: %d, onError: %d", genuine, onError);
 #endif
 
-    if (onError && genuine == CHECK_ERROR) {
+    if (genuine == CHECK_FAKE || (onError && genuine == CHECK_ERROR)) {
         clearHandler(env);
         return JNI_ERR;
     }

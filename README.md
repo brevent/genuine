@@ -7,7 +7,6 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 - Xposed hook: hook any Java method in [Xposed](https://github.com/rovo89/XposedBridge).
   - [EdXposed](https://github.com/ElderDrivers/EdXposed)
   - (optional) [TaiChi](https://github.com/taichi-framework/TaiChi), closed source
-    - TaiChi requires c++, can turn on by `SUPPORT_EPIC`, and experimental build flag `GENUINE_NO_STL`.
 
 - fake signature: fake your signature.
 `genuine` module requires usage of [Apk Sign v2](https://source.android.com/security/apksigning/v2) or [Apk Sign v3](https://source.android.com/security/apksigning/v3).
@@ -15,7 +14,6 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 - (optional) PLT Hook: currently only check `jniRegisterNativeMethods` by flag `CHECK_JNI_REGISTER_NATIVE_METHODS`.
 
 - virtual app (binder proxy): run your app in virtual app, like [VirtualApp](https://github.com/asLody/VirtualApp).
-*Note*: may doesn't work, and normally will be antied by other genuine strategy.
 
 - (optional) odex: modify odex codes without modify apk, like [URET](https://www.uret.in/)
 
@@ -31,6 +29,41 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 
 4. define your own methods in `src/main/jni/genuine_extra.c`
    > don't forget to update your own class
+
+# features
+
+```c
+/* define to turn off maps check */
+// #define NO_CHECK_MAPS
+
+#ifndef NO_CHECK_MAPS
+/* define to anti odex */
+// #define ANTI_ODEX
+
+/* define to anti overlay */
+// #define ANTI_OVERLAY
+#endif
+
+/* define to check plt hook for jniRegisterNativeMethods */
+// #define CHECK_JNI_REGISTER_NATIVE_METHODS
+
+/* define to turn off xposed check */
+// #define NO_CHECK_XPOSED
+
+/* define to turn off xposed-edxposed check */
+// #define NO_CHECK_XPOSED_EDXPOSED
+
+/* define to turn on xposed-epic check
+ * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en
+ */
+// #define CHECK_XPOSED_EPIC
+```
+
+# practices
+
+1. make sure libgenuine.so always loaded
+
+2. crash for fake signature
 
 # And license?
 

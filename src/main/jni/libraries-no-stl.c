@@ -23,7 +23,7 @@
 #define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
 #endif
 
-#if (defined(SUPPORT_EPIC) || defined(CHECK_SO_LIBRARY)) && defined(GENUINE_NO_STL)
+#if (defined(CHECK_XPOSED_EPIC) || defined(CHECK_SO_LIBRARY)) && defined(GENUINE_NO_STL)
 
 typedef struct l {
     size_t cap __unused;
@@ -53,7 +53,7 @@ typedef struct string {
 #error "invalid byte order"
 #endif
 
-static char *get_data(string *string) {
+static const char *get_data(const string *string) {
     unsigned char size = string->s.size;
     if ((size & SHORT_MASK)) {
         return string->l.data;
@@ -344,7 +344,7 @@ static inline bool issystem(const char *str) {
 static inline jobject checkClassLoader(JNIEnv *env, int sdk, SharedLibrary *sharedLibrary) {
     jobject classLoader = sharedLibrary->class_loader;
 #ifdef DEBUG
-    LOGI("path: %s, %p", sharedLibrary->path.data, classLoader);
+    LOGI("path: %s, %p", get_data(&(sharedLibrary->path)), classLoader);
 #endif
     if (classLoader == NULL) {
         return NULL;
@@ -381,6 +381,9 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
 
 #ifdef DUMP_JVM
     char *dump = dump_jvm(jvm, &symbol);
+#ifdef DEBUG
+    LOGI("DumpForSigQuit: %s", dump);
+#endif
     bool safe = dump != NULL && strstr(dump, name) == NULL;
     free(dump);
     if (safe) {
@@ -420,10 +423,10 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
         tree *t = found->begin;
         void *end = &(found->end);
         for (size_t i = 0; i < found->size; ++i) {
+            const char *data = get_data(&(t->first));
 #ifdef DEBUG
-            LOGI("tree: %p, path: %s, loader: %p", t, t->first.data, t->second);
+            LOGI("tree: %p, path: %s, loader: %p", t, data, t->second);
 #endif
-            char *data = get_data(&(t->first));
             if (data != NULL) {
                 if (strstr(data, name) != NULL && t->second != NULL) {
                     jobject classLoader = checkClassLoader(env, sdk, (SharedLibrary *) t->second);

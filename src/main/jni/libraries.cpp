@@ -25,7 +25,7 @@
 #include <sstream>
 #include <map>
 
-#if defined(SUPPORT_EPIC) || defined(CHECK_SO_LIBRARY)
+#if defined(CHECK_XPOSED_EPIC) || defined(CHECK_SO_LIBRARY)
 
 class SharedLibrary {
 public:

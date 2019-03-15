@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#ifdef SUPPORT_EPIC
+#ifdef CHECK_XPOSED_EPIC
 
 __attribute__ ((visibility ("internal")))
 bool antiEpic(JNIEnv *env, int sdk);
