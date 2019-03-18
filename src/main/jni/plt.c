@@ -221,7 +221,7 @@ static ElfW(Addr) *find_plt(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, con
     return NULL;
 }
 
-static inline bool issystem(const char *str) {
+static inline bool isSystem(const char *str) {
     return str != NULL
            && *str == '/'
            && *++str == 's'
@@ -230,6 +230,18 @@ static inline bool issystem(const char *str) {
            && *++str == 't'
            && *++str == 'e'
            && *++str == 'm'
+           && *++str == '/';
+}
+
+static inline bool isVendor(const char *str) {
+    return str != NULL
+           && *str == '/'
+           && *++str == 'v'
+           && *++str == 'e'
+           && *++str == 'n'
+           && *++str == 'd'
+           && *++str == 'o'
+           && *++str == 'r'
            && *++str == '/';
 }
 
@@ -260,7 +272,7 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                 }
             }
             symbol->symbol_plt = addr;
-            if (symbol->size != -1 && !issystem(info->dlpi_name)) {
+            if (symbol->size != -1 && !isSystem(info->dlpi_name) && !isVendor(info->dlpi_name)) {
                 if (symbol->size == 0) {
                     symbol->size = 1;
                     symbol->names = calloc(1, sizeof(char *));

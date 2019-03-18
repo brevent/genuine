@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include <android/log.h>
 #include <errno.h>
+#include <syscall.h>
 
 #if __has_include("genuine.h")
 #include "genuine.h"
@@ -18,6 +19,7 @@
 #endif
 
 #include "plt.h"
+#include "inline.h"
 #include "anti-xposed.h"
 #include "apk-sign-v2.h"
 #include "genuine_extra.h"
@@ -53,7 +55,6 @@ static void __genuine_log_print(int prio, const char *fmt, ...) {
 #endif
 
 enum {
-    CHECK_UNKNOWN = -1,
     CHECK_TRUE,
     CHECK_FALSE,
     CHECK_FAKE,
@@ -68,7 +69,7 @@ enum {
 #error "VERSION should be larger than CHECK_ERROR"
 #endif
 
-static int genuine = CHECK_UNKNOWN;
+static int genuine = CHECK_TRUE;
 
 static int sdk;
 
@@ -83,12 +84,12 @@ static bool xposed = false;
 static jint version(JNIEnv *env, jclass clazz __unused) {
     if (uid < 10000) {
         return VERSION;
-    } else if (genuine == CHECK_TRUE) {
-        if (isAmProxy(env, sdk)) {
-            return CHECK_PROXY;
-        } else {
-            return VERSION;
-        }
+    }
+    if (genuine != CHECK_PROXY && isAmProxy(env, sdk)) {
+        genuine = CHECK_PROXY;
+    }
+    if (genuine == CHECK_TRUE) {
+        return VERSION;
     } else {
         return genuine;
     }
@@ -153,33 +154,9 @@ static inline void fill_maps(char v[]) {
     v[0xf] = '\0';
 }
 
-static inline void fill_faccessat(char v[]) {
-    // faccessat
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 7;
-    } else if (m == 11) {
-        m = 13;
-    }
-
-    v[0x0] = 'd';
-    v[0x1] = 'b';
-    v[0x2] = 'g';
-    v[0x3] = 'f';
-    v[0x4] = 'c';
-    v[0x5] = 's';
-    v[0x6] = 'r';
-    v[0x7] = 'c';
-    v[0x8] = 'w';
-    for (unsigned int i = 0; i < 0x9; ++i) {
-        v[i] ^= ((i + 0x9) % m);
-    }
-    v[0x9] = '\0';
-}
-
-static inline void fill_data_data_proc_self_maps(char v[]) {
-    // /data/data/%s/proc_self_maps
+#ifndef NO_CHECK_MAPS
+static inline void fill_cannot_open_proc_self_maps(char v[]) {
+    // cannot open /proc/self/maps
     static unsigned int m = 0;
 
     if (m == 0) {
@@ -188,146 +165,38 @@ static inline void fill_data_data_proc_self_maps(char v[]) {
         m = 31;
     }
 
-    v[0x0] = '*';
-    v[0x1] = 'b';
-    v[0x2] = 'f';
-    v[0x3] = '|';
-    v[0x4] = 'h';
-    v[0x5] = '%';
-    v[0x6] = 'o';
-    v[0x7] = 'm';
-    v[0x8] = 'y';
-    v[0x9] = 'o';
-    v[0xa] = ' ';
-    v[0xb] = '5';
-    v[0xc] = 'b';
-    v[0xd] = '=';
-    v[0xe] = 'c';
-    v[0xf] = 'f';
-    v[0x10] = 'z';
-    v[0x11] = 'u';
-    v[0x12] = '_';
-    v[0x13] = 'r';
-    v[0x14] = 'g';
-    v[0x15] = 'o';
-    v[0x16] = 'b';
-    v[0x17] = 'Z';
-    v[0x18] = 'k';
-    v[0x19] = 'f';
-    v[0x1a] = 'x';
-    v[0x1b] = 'z';
-    for (unsigned int i = 0; i < 0x1c; ++i) {
-        v[i] ^= ((i + 0x1c) % m);
+    v[0x0] = 'g';
+    v[0x1] = 'd';
+    v[0x2] = 'h';
+    v[0x3] = 'i';
+    v[0x4] = 'g';
+    v[0x5] = '}';
+    v[0x6] = '*';
+    v[0x7] = 'd';
+    v[0x8] = '|';
+    v[0x9] = 'h';
+    v[0xa] = '`';
+    v[0xb] = '/';
+    v[0xc] = '?';
+    v[0xd] = 'a';
+    v[0xe] = '`';
+    v[0xf] = '|';
+    v[0x10] = 'w';
+    v[0x11] = ':';
+    v[0x12] = 'e';
+    v[0x13] = 'e';
+    v[0x14] = 'm';
+    v[0x15] = 'd';
+    v[0x16] = ',';
+    v[0x17] = 'i';
+    v[0x18] = 'd';
+    v[0x19] = 'v';
+    v[0x1a] = 't';
+    for (unsigned int i = 0; i < 0x1b; ++i) {
+        v[i] ^= ((i + 0x1b) % m);
     }
-    v[0x1c] = '\0';
+    v[0x1b] = '\0';
 }
-
-static inline void fill_symlink(char v[]) {
-    // symlink
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 5;
-    } else if (m == 7) {
-        m = 11;
-    }
-
-    v[0x0] = 'q';
-    v[0x1] = 'z';
-    v[0x2] = 'i';
-    v[0x3] = 'l';
-    v[0x4] = 'h';
-    v[0x5] = 'l';
-    v[0x6] = 'h';
-    for (unsigned int i = 0; i < 0x7; ++i) {
-        v[i] ^= ((i + 0x7) % m);
-    }
-    v[0x7] = '\0';
-}
-
-static inline void fill_ln_s_s_s(char v[]) {
-    // ln -s %s %s
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 7;
-    } else if (m == 11) {
-        m = 13;
-    }
-
-    v[0x0] = 'h';
-    v[0x1] = 'k';
-    v[0x2] = '&';
-    v[0x3] = '-';
-    v[0x4] = 'r';
-    v[0x5] = '"';
-    v[0x6] = '&';
-    v[0x7] = 'w';
-    v[0x8] = '%';
-    v[0x9] = '#';
-    v[0xa] = 's';
-    for (unsigned int i = 0; i < 0xb; ++i) {
-        v[i] ^= ((i + 0xb) % m);
-    }
-    v[0xb] = '\0';
-}
-
-static inline void fill_link(char link[]) {
-    char format[0x1d];
-    fill_data_data_proc_self_maps(format);
-
-    char *genuinePackageName = getGenuinePackageName();
-    sprintf(link, format, genuinePackageName);
-#ifdef GENUINE_NAME
-    free(genuinePackageName);
-#endif
-    unlink(link);
-}
-
-static inline bool fill_proc_self_maps(char link[]) {
-    if (uid < 10000) {
-        fill_maps(link);
-        return true;
-    }
-
-    char target[0x10];
-    fill_maps(target);
-    if (sdk >= 23 && faccessat(AT_FDCWD, target, R_OK, 0) ==
-                     faccessat(AT_FDCWD, target, R_OK, AT_SYMLINK_NOFOLLOW)) {
-        char error[0xa];
-        fill_faccessat(error);
-        LOGE(error);
-        return false;
-    }
-
-    char symlink[0x8];
-    fill_symlink(symlink);
-    Symbol symbol;
-    dl_iterate_phdr_symbol(&symbol, symlink);
-    int (*ln)(const char *, const char *);
-    ln = (int (*)(const char *, const char *)) symbol.symbol_sym;
-
-    if (!ln) {
-        LOGE(symlink);
-        return false;
-    }
-
-    fill_link(link);
-    if (ln(target, link)) {
-        char error[0xc];
-        fill_ln_s_s_s(error);
-        LOGE(error, link, target);
-        return false;
-    }
-
-#ifdef DEBUG
-    LOGI("maps %s", link);
-#endif
-
-    return true;
-}
-
-#ifndef NO_CHECK_MAPS
 
 static inline void fill_r(char v[]) {
     static unsigned int m = 0;
@@ -553,6 +422,36 @@ static inline bool isSame(const char *path1, const char *path2) {
     }
 }
 
+static inline void fill_cannot_find_s(char v[]) {
+    // cannot find %s
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 13;
+    } else if (m == 17) {
+        m = 19;
+    }
+
+    v[0x0] = 'b';
+    v[0x1] = 'c';
+    v[0x2] = 'm';
+    v[0x3] = 'j';
+    v[0x4] = 'j';
+    v[0x5] = 'r';
+    v[0x6] = '\'';
+    v[0x7] = 'n';
+    v[0x8] = '`';
+    v[0x9] = 'd';
+    v[0xa] = 'o';
+    v[0xb] = ',';
+    v[0xc] = '%';
+    v[0xd] = 'r';
+    for (unsigned int i = 0; i < 0xe; ++i) {
+        v[i] ^= ((i + 0xe) % m);
+    }
+    v[0xe] = '\0';
+}
+
 enum {
     TYPE_NON,
     TYPE_APK,
@@ -560,10 +459,27 @@ enum {
     TYPE_SO,
 };
 
+static inline int openAt(const char *path) {
+    int flags = (unsigned) O_RDONLY | (unsigned) O_CLOEXEC;
+#ifdef __ANDROID__
+    return syscall(__NR_openat, AT_FDCWD, path, flags);
+#else
+    return openat(AT_FDCWD, path, flags);
+#endif
+}
+
 static inline int checkMaps(const char *maps, const char *packageName, const char *packagePath) {
-    FILE *fp;
+    FILE *fp = NULL;
     char line[PATH_MAX];
     int check = genuine;
+    bool loaded = false;
+
+    int fd = openAt(maps);
+    if (fd == -1) {
+        fill_cannot_open_proc_self_maps(line);
+        LOGE(line);
+        return CHECK_ERROR;
+    }
 
     Symbol symbol;
     char *d = calloc(1, 0x10);
@@ -587,12 +503,13 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
     char mode[0x2];
     fill_r(mode);
 
-    fp = fopen(maps, mode);
+
+    fp = fdopen(fd, mode);
     if (fp == NULL) {
         fill_maps(line);
-        LOGW(line);
+        LOGE(line);
         check = CHECK_ERROR;
-        goto clean2;
+        goto clean3;
     }
 
     while (fgets(line, PATH_MAX - 1, fp) != NULL) {
@@ -628,16 +545,20 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
         } else {
             type = TYPE_NON;
         }
+#ifdef DEBUG_MAPS
+        if (type != TYPE_NON) {
+            LOGI(line);
+        }
+#endif
         if (strstr(path, packageName) != NULL && access(path, F_OK) == 0) {
             if (type == TYPE_APK) {
 #ifdef DEBUG
                 LOGI("check %s", path);
 #endif
-                if (!isSameFile(path, packagePath) && checkSignature(path)) {
-                    LOGE(path);
-                    check = CHECK_FAKE;
-                } else if (check == CHECK_UNKNOWN) {
-                    check = CHECK_TRUE;
+                if (isSameFile(path, packagePath)) {
+                    loaded = true;
+                } else {
+                    LOGW(path);
                 }
             } else if (type == TYPE_DEX) {
 #ifdef ANTI_ODEX
@@ -674,7 +595,15 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
 
     fclose(fp);
 
+clean3:
+    close(fd);
+
 clean2:
+    if (!loaded) {
+        fill_cannot_find_s(line);
+        LOGE(line, packagePath);
+        check = CHECK_ERROR;
+    }
     for (int i = 0; i < symbol.size; ++i) {
         if (symbol.names[i] != NULL) {
             LOGE(symbol.names[i]);
@@ -689,12 +618,11 @@ clean2:
     }
     free(d);
 
-    unlink(maps);
     return check;
 }
 #endif
 
-#ifdef CHECK_JNI_REGISTER_NATIVE_METHODS
+#ifdef CHECK_HOOK
 static inline void fill_jniRegisterNativeMethods(char v[]) {
     // jniRegisterNativeMethods
     static unsigned int m = 0;
@@ -921,16 +849,228 @@ static inline void fill_received_sigcont(char v[]) {
     v[0x10] = '\0';
 }
 
+#if defined(CHECK_ARM64) && defined(__arm__)
+static inline void fill_ro_product_cpu_abi(char v[]) {
+    // ro.product.cpu.abi
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 17;
+    } else if (m == 19) {
+        m = 23;
+    }
+
+    v[0x0] = 's';
+    v[0x1] = 'm';
+    v[0x2] = '-';
+    v[0x3] = 't';
+    v[0x4] = 'w';
+    v[0x5] = 'i';
+    v[0x6] = 'c';
+    v[0x7] = '}';
+    v[0x8] = 'j';
+    v[0x9] = '~';
+    v[0xa] = '%';
+    v[0xb] = 'o';
+    v[0xc] = '}';
+    v[0xd] = '{';
+    v[0xe] = '!';
+    v[0xf] = 'q';
+    v[0x10] = 'b';
+    v[0x11] = 'h';
+    for (unsigned int i = 0; i < 0x12; ++i) {
+        v[i] ^= ((i + 0x12) % m);
+    }
+    v[0x12] = '\0';
+}
+
+static inline bool isArm64V8a(const char *str) {
+    return str != NULL
+           && *str == 'a'
+           && *++str == 'r'
+           && *++str == 'm'
+           && *++str == '6'
+           && *++str == '4'
+           && *++str == '-'
+           && *++str == 'v'
+           && *++str == '8'
+           && *++str == 'a';
+}
+
+static inline void fill_32_64(char v[]) {
+    // run in 32 on 64 machine
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 19;
+    } else if (m == 23) {
+        m = 29;
+    }
+
+    v[0x0] = 'v';
+    v[0x1] = 'p';
+    v[0x2] = 'h';
+    v[0x3] = '\'';
+    v[0x4] = 'a';
+    v[0x5] = 'g';
+    v[0x6] = '*';
+    v[0x7] = '8';
+    v[0x8] = '>';
+    v[0x9] = '-';
+    v[0xa] = 'a';
+    v[0xb] = 'a';
+    v[0xc] = '0';
+    v[0xd] = '\'';
+    v[0xe] = '&';
+    v[0xf] = ' ';
+    v[0x10] = 'l';
+    v[0x11] = 'c';
+    v[0x12] = '`';
+    v[0x13] = 'l';
+    v[0x14] = 'l';
+    v[0x15] = 'h';
+    v[0x16] = 'b';
+    for (unsigned int i = 0; i < 0x17; ++i) {
+        v[i] ^= ((i + 0x17) % m);
+    }
+    v[0x17] = '\0';
+}
+#endif
+
 static void handler(int sig __unused) {
     char v[0x11];
     fill_received_sigcont(v);
     LOGI(v);
 }
 
+static inline void fill_syscall_is_hooked(char v[]) {
+    // syscall is hooked
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 13;
+    } else if (m == 17) {
+        m = 19;
+    }
+
+    v[0x0] = 'w';
+    v[0x1] = '|';
+    v[0x2] = 'u';
+    v[0x3] = 'd';
+    v[0x4] = 'i';
+    v[0x5] = 'e';
+    v[0x6] = 'f';
+    v[0x7] = '+';
+    v[0x8] = 'e';
+    v[0x9] = 's';
+    v[0xa] = '!';
+    v[0xb] = 'j';
+    v[0xc] = 'l';
+    v[0xd] = 'k';
+    v[0xe] = 'n';
+    v[0xf] = 'c';
+    v[0x10] = 'c';
+    for (unsigned int i = 0; i < 0x11; ++i) {
+        v[i] ^= ((i + 0x11) % m);
+    }
+    v[0x11] = '\0';
+}
+
+static inline void fill_syscall(char v[]) {
+    // syscall
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
+    }
+
+    v[0x0] = 'q';
+    v[0x1] = 'z';
+    v[0x2] = 'w';
+    v[0x3] = 'c';
+    v[0x4] = '`';
+    v[0x5] = 'n';
+    v[0x6] = 'o';
+    for (unsigned int i = 0; i < 0x7; ++i) {
+        v[i] ^= ((i + 0x7) % m);
+    }
+    v[0x7] = '\0';
+}
+
+static bool check_inline_hook() {
+    char v[0x12];
+    Symbol s;
+    fill_syscall(v);
+    void *symbol = dlsym(RTLD_NEXT, v);
+    if (dl_iterate_phdr_symbol(&s, v)) {
+        fill_syscall_is_hooked(v);
+        LOGE(v);
+        return false;
+    }
+    if (symbol != s.symbol_sym) {
+#if defined(DEBUG_HOOK) || defined(DEBUG)
+        LOGI("syscall, dlsym: %p, dl_iter: %p", symbol, s.symbol_sym);
+#endif
+        fill_syscall_is_hooked(v);
+        LOGE(v);
+    }
+    if (isInlineHooked(s.symbol_sym)) {
+        fill_syscall_is_hooked(v);
+        LOGE(v);
+        return false;
+    }
+    return true;
+}
+
+static inline void fill_invalid_signature_path_s(char v[]) {
+    // invalid signature, path: %s
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 23;
+    } else if (m == 29) {
+        m = 31;
+    }
+
+    v[0x0] = 'm';
+    v[0x1] = 'k';
+    v[0x2] = 'p';
+    v[0x3] = 'f';
+    v[0x4] = 'd';
+    v[0x5] = '`';
+    v[0x6] = 'n';
+    v[0x7] = '+';
+    v[0x8] = '\x7f';
+    v[0x9] = 'd';
+    v[0xa] = 'i';
+    v[0xb] = 'a';
+    v[0xc] = 'q';
+    v[0xd] = 'e';
+    v[0xe] = 'g';
+    v[0xf] = 'a';
+    v[0x10] = 'q';
+    v[0x11] = '9';
+    v[0x12] = '6';
+    v[0x13] = 'p';
+    v[0x14] = '`';
+    v[0x15] = 'v';
+    v[0x16] = 'k';
+    v[0x17] = '>';
+    v[0x18] = '%';
+    v[0x19] = '#';
+    v[0x1a] = 't';
+    for (unsigned int i = 0; i < 0x1b; ++i) {
+        v[i] ^= ((i + 0x1b) % m);
+    }
+    v[0x1b] = '\0';
+}
+
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
-    char v1[0x19];
+    char v1[0x1c];
     char prop[PROP_VALUE_MAX] = {0};
 
     signal(SIGCONT, handler);
@@ -939,20 +1079,26 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 
     fill_ro_build_version_sdk(v1); // 0x15
     __system_property_get(v1, prop);
-    sdk = (int) strtol(prop, NULL, 10);;
+    sdk = (int) strtol(prop, NULL, 10);
 
     uid = getuid();
 
 #ifdef DEBUG
-    LOGI("JNI_OnLoad start");
+    LOGI("JNI_OnLoad start, sdk: %d, uid: %d", sdk, uid);
 #endif
 
     if ((*jvm)->GetEnv(jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
 
+    if (!check_inline_hook()) {
+        clearHandler(env);
+        return JNI_ERR;
+    }
+
     char *genuineClassName = getGenuineClassName();
     if ((clazz = (*env)->FindClass(env, genuineClassName)) == NULL) {
+        clearHandler(env);
         return JNI_ERR;
     }
 #ifdef GENUINE_CLAZZ
@@ -968,6 +1114,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     methods[0].fnPtr = version;
 
     if ((*env)->RegisterNatives(env, clazz, methods, 1) < 0) {
+        clearHandler(env);
         return JNI_ERR;
     }
 
@@ -975,19 +1122,30 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     LOGI("JNI_OnLoad_Extra start");
 #endif
     if (JNI_OnLoad_Extra(env, clazz, sdk, &onError) < 0) {
+        clearHandler(env);
         return JNI_ERR;
     }
 
-    if (uid < 10000) {
-        (*env)->DeleteLocalRef(env, clazz);
-        return JNI_VERSION_1_6;
+    char *packageName = getGenuinePackageName();
+    char *packagePath = getPath(env, uid, packageName);
+    if (packagePath == NULL) {
+        fill_cannot_find_s(v1);
+        LOGE(v1, packageName);
+        genuine = CHECK_FAKE;
+        goto clean;
+    } else if (checkSignature(packagePath)) {
+        fill_invalid_signature_path_s(v1);
+        LOGE(v1, packagePath);
+        genuine = CHECK_FAKE;
+        goto clean;
     }
 
-    char maps[NAME_MAX];
-    if (!fill_proc_self_maps(maps)) {
-        fill_maps(maps);
-        genuine = CHECK_FALSE;
+    if (uid < 10000) {
+        goto clean;
     }
+
+    char maps[0x10];
+    fill_maps(maps);
 
     if (sdk >= 21) {
 #ifndef NO_CHECK_XPOSED
@@ -1016,28 +1174,14 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     checkMount(maps);
 #endif
 
-    char *packageName = getGenuinePackageName();
-    char *packagePath = getPath(env, uid, packageName);
-    if (packagePath != NULL && checkSignature(packagePath)) {
-        LOGE(packagePath);
-        genuine = CHECK_FAKE;
-    }
-
 #ifndef NO_CHECK_MAPS
 #ifdef DEBUG
     LOGI("checkMaps start");
 #endif
-    if (genuine != CHECK_FAKE) {
-        genuine = checkMaps(maps, packageName, packagePath);
-    }
+    genuine = checkMaps(maps, packageName, packagePath);
 #endif
 
-#ifdef GENUINE_NAME
-    free(packageName);
-#endif
-    free(packagePath);
-
-#ifdef CHECK_JNI_REGISTER_NATIVE_METHODS
+#ifdef CHECK_HOOK
     if (genuine == CHECK_TRUE) {
         Symbol symbol;
         fill_jniRegisterNativeMethods(v1); // 0x19
@@ -1048,15 +1192,53 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     }
 #endif
 
+#if defined(CHECK_ARM64) && defined(__arm__)
+    if (genuine == CHECK_TRUE) {
+        fill_ro_product_cpu_abi(v1);
+        __system_property_get(v1, prop);
+        if (isArm64V8a(prop)) {
+            fill_32_64(v1);
+            LOGW(v1);
+            genuine = CHECK_FALSE;
+        }
+    }
+#endif
+
+clean:
+#ifdef GENUINE_NAME
+    free(packageName);
+#endif
+    free(packagePath);
+
     (*env)->DeleteLocalRef(env, clazz);
 
 #ifdef DEBUG
     LOGI("JNI_OnLoad end, genuine: %d, onError: %d", genuine, onError);
 #endif
 
-    if (genuine == CHECK_FAKE || (onError && genuine == CHECK_ERROR)) {
-        clearHandler(env);
-        return JNI_ERR;
+    switch (genuine) {
+        case CHECK_FALSE:
+            break;
+        case CHECK_OVERLAY:
+            break;
+        case CHECK_ODEX:
+            break;
+        case CHECK_PROXY:
+            break;
+        case CHECK_DEX:
+            if (!onError) {
+                break;
+            }
+        case CHECK_FAKE:
+        case CHECK_ERROR:
+            clearHandler(env);
+            return JNI_ERR;
+        default:
+            break;
+    }
+
+    if (genuine != CHECK_PROXY && isAmProxy(env, sdk)) {
+        genuine = CHECK_PROXY;
     }
 
     fill_sdk_d_genuine_d(v1); // 0x15

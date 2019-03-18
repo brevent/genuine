@@ -7,8 +7,6 @@
 #include "genuine.h"
 #include "pm.h"
 
-#ifdef DEBUG
-
 #ifndef TAG
 #define TAG "Genuine"
 #endif
@@ -31,6 +29,8 @@ static void __genuine_log_print(int prio, const char *fmt, ...) {
     va_end(ap);
 }
 #endif
+
+#ifdef DEBUG
 
 static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
     jclass classObject = (*env)->FindClass(env, "java/lang/Object");
@@ -521,6 +521,93 @@ static inline void fill_sourceDir_signature(char v[]) {
     v[0x12] = '\0';
 }
 
+static inline void fill_android_os_BinderProxy(char v[]) {
+    // android/os/BinderProxy
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 19;
+    } else if (m == 23) {
+        m = 29;
+    }
+
+    v[0x0] = 'b';
+    v[0x1] = 'j';
+    v[0x2] = 'a';
+    v[0x3] = 't';
+    v[0x4] = 'h';
+    v[0x5] = 'a';
+    v[0x6] = 'm';
+    v[0x7] = '%';
+    v[0x8] = 'd';
+    v[0x9] = '\x7f';
+    v[0xa] = '"';
+    v[0xb] = 'L';
+    v[0xc] = 'f';
+    v[0xd] = '~';
+    v[0xe] = 'u';
+    v[0xf] = 'w';
+    v[0x10] = 'r';
+    v[0x11] = 'Q';
+    v[0x12] = 'p';
+    v[0x13] = 'l';
+    v[0x14] = '|';
+    v[0x15] = '|';
+    for (unsigned int i = 0; i < 0x16; ++i) {
+        v[i] ^= ((i + 0x16) % m);
+    }
+    v[0x16] = '\0';
+}
+
+static inline void fill_invalid_package_manager_path_s(char v[]) {
+    // invalid package manager, path: %s
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 31;
+    } else if (m == 37) {
+        m = 41;
+    }
+
+    v[0x0] = 'k';
+    v[0x1] = 'm';
+    v[0x2] = 'r';
+    v[0x3] = 'd';
+    v[0x4] = 'j';
+    v[0x5] = 'n';
+    v[0x6] = 'l';
+    v[0x7] = ')';
+    v[0x8] = 'z';
+    v[0x9] = 'j';
+    v[0xa] = 'o';
+    v[0xb] = 'f';
+    v[0xc] = 'o';
+    v[0xd] = 'h';
+    v[0xe] = 'u';
+    v[0xf] = '1';
+    v[0x10] = '\x7f';
+    v[0x11] = 'r';
+    v[0x12] = 'z';
+    v[0x13] = 't';
+    v[0x14] = 'q';
+    v[0x15] = 'r';
+    v[0x16] = 'j';
+    v[0x17] = '5';
+    v[0x18] = ':';
+    v[0x19] = 'k';
+    v[0x1a] = '}';
+    v[0x1b] = 'i';
+    v[0x1c] = 'v';
+    v[0x1d] = ':';
+    v[0x1e] = '!';
+    v[0x1f] = '\'';
+    v[0x20] = 'p';
+    for (unsigned int i = 0; i < 0x21; ++i) {
+        v[i] ^= ((i + 0x21) % m);
+    }
+    v[0x21] = '\0';
+}
+
 char *getPath(JNIEnv *env, int uid, const char *packageName) {
     char *path = NULL;
     char v1[0x80], v2[0x80];
@@ -640,12 +727,35 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
     }
     jstring sourceDir = (*env)->GetObjectField(env, applicationInfo, field);
     debug(env, "sourceDir: %s", sourceDir);
-    const char *chars = (*env)->GetStringUTFChars(env, sourceDir, NULL);;
+    const char *chars = (*env)->GetStringUTFChars(env, sourceDir, NULL);
+
+    fill_android_os_BinderProxy(v2); // 0x16 + 1
+    jclass classBinderProxy = (*env)->FindClass(env, v2);
+    if (classBinderProxy == NULL) {
+#ifdef DEBUG
+        LOGW("cannot find BinderProxy");
+#endif
+        (*env)->ExceptionClear(env);
+    } else {
+        debug(env, "BinderProxy: %s", classBinderProxy);
+    }
+
+    jclass serviceClass = (*env)->GetObjectClass(env, service);
+    debug(env, "service class: %s", serviceClass);
+    if (classBinderProxy != NULL && !(*env)->IsSameObject(env, serviceClass, classBinderProxy)) {
+        fill_invalid_package_manager_path_s(v2);
+        LOGW(v2, chars);
+    }
     path = strdup(chars);
+
 #ifdef DEBUG
     LOGI("path: %s", chars);
 #endif
 
+    (*env)->DeleteLocalRef(env, serviceClass);
+    if (classBinderProxy != NULL) {
+        (*env)->DeleteLocalRef(env, classBinderProxy);
+    }
     (*env)->ReleaseStringUTFChars(env, sourceDir, chars);
     (*env)->DeleteLocalRef(env, sourceDir);
 cleanClassApplicationInfo:
