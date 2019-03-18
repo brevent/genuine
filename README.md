@@ -11,7 +11,7 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 - fake signature: fake your signature.
 `genuine` module requires usage of [Apk Sign v2](https://source.android.com/security/apksigning/v2) or [Apk Sign v3](https://source.android.com/security/apksigning/v3).
 
-- (optional) PLT Hook: currently only check `jniRegisterNativeMethods` by flag `CHECK_JNI_REGISTER_NATIVE_METHODS`.
+- (optional) PLT Hook: currently only check `jniRegisterNativeMethods` by flag `CHECK_HOOK`.
 
 - virtual app (binder proxy): run your app in virtual app, like [VirtualApp](https://github.com/asLody/VirtualApp).
 
@@ -45,7 +45,7 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 #endif
 
 /* define to check plt hook for jniRegisterNativeMethods */
-// #define CHECK_JNI_REGISTER_NATIVE_METHODS
+// #define CHECK_HOOK
 
 /* define to turn off xposed check */
 // #define NO_CHECK_XPOSED
@@ -57,13 +57,16 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
  * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en
  */
 // #define CHECK_XPOSED_EPIC
+
+/* check use arm32 on arm64-v8a */
+// #define CHECK_ARM64
 ```
 
 # practices
 
 1. make sure libgenuine.so always loaded
 
-2. crash for fake signature
+2. crash for fake signature or check error
 
 # And license?
 
