@@ -122,7 +122,39 @@ public class SimpleApkV2 {
                 "/* define to turn on xposed-epic check\n" +
                 " * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en\n" +
                 " */\n" +
-                "// #define CHECK_XPOSED_EPIC\n";
+                "// #define CHECK_XPOSED_EPIC\n" +
+                "\n" +
+                "/* genuine false handler */\n" +
+                "// #define GENUINE_FALSE_CRASH\n" +
+                "// #define GENUINE_FALSE_NATIVE\n" +
+                "\n" +
+                "/* genuine fake handler */\n" +
+                "// #define GENUINE_FAKE_CRASH\n" +
+                "#define GENUINE_FAKE_NATIVE\n" +
+                "\n" +
+                "/* genuine overlay handler */\n" +
+                "// #define GENUINE_OVERLAY_CRASH\n" +
+                "// #define GENUINE_OVERLAY_NATIVE\n" +
+                "\n" +
+                "/* genuine odex handler */\n" +
+                "// #define GENUINE_ODEX_CRASH\n" +
+                "// #define GENUINE_ODEX_NATIVE\n" +
+                "\n" +
+                "/* genuine dex handler */\n" +
+                "// #define GENUINE_DEX_CRASH\n" +
+                "// #define GENUINE_DEX_NATIVE\n" +
+                "\n" +
+                "/* genuine proxy handler */\n" +
+                "// #define GENUINE_PROXY_CRASH\n" +
+                "// #define GENUINE_PROXY_NATIVE\n" +
+                "\n" +
+                "/* genuine error handler */\n" +
+                "// #define GENUINE_ERROR_CRASH\n" +
+                "#define GENUINE_ERROR_NATIVE\n" +
+                "\n" +
+                "/* genuine fatal handler */\n" +
+                "// #define GENUINE_FATAL_CRASH\n" +
+                "#define GENUINE_FATAL_NATIVE";
         System.out.print(extra);
     }
 

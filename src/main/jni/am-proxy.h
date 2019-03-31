@@ -12,7 +12,6 @@
 extern "C" {
 #endif
 
-__attribute__ ((visibility ("internal")))
 bool isAmProxy(JNIEnv *env, int sdk);
 
 #ifdef __cplusplus

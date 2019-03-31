@@ -8,20 +8,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <malloc.h>
-#include "genuine.h"
+#include "common.h"
 #include "plt.h"
+#include "libraries.h"
 #include "libraries-mock.h"
-
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-
-#ifndef LOGI
-#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
 
 #if (defined(CHECK_XPOSED_EPIC) || defined(CHECK_SO_LIBRARY)) && defined(GENUINE_NO_STL)
 
@@ -119,7 +109,7 @@ static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
 
 static inline void fill_DumpForSigQuit(char v[]) {
     // _ZN3art9JavaVMExt14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 79;
@@ -217,7 +207,7 @@ static inline void fill_DumpForSigQuit(char v[]) {
 
 static inline void fill_dev_random(char v[]) {
     // /dev/random
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 7;
@@ -244,7 +234,7 @@ static inline void fill_dev_random(char v[]) {
 
 static void inline fill_NewLocalRef(char v[]) {
     // _ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 47;
@@ -341,6 +331,17 @@ static inline bool issystem(const char *str) {
            && *++str == '/';
 }
 
+static jobject newLocalRef(JNIEnv *env, jobject classLoader) {
+    char v[0x33];
+    fill_NewLocalRef(v);
+    jobject (*NewLocalRef)(JNIEnv *, void *) = (jobject (*)(JNIEnv *, void *)) plt_dlsym(v, NULL);
+    if (NewLocalRef != NULL) {
+        return NewLocalRef(env, classLoader);
+    } else {
+        return classLoader;
+    }
+}
+
 static inline jobject checkClassLoader(JNIEnv *env, int sdk, SharedLibrary *sharedLibrary) {
     jobject classLoader = sharedLibrary->class_loader;
 #ifdef DEBUG
@@ -350,11 +351,7 @@ static inline jobject checkClassLoader(JNIEnv *env, int sdk, SharedLibrary *shar
         return NULL;
     }
     if (sdk < 23) {
-        char v[0x33];
-        Symbol symbol;
-        fill_NewLocalRef(v);
-        dl_iterate_phdr_symbol(&symbol, v);
-        classLoader = ((jobject (*)(JNIEnv *, void *)) (symbol.symbol_sym))(env, classLoader);
+        classLoader = newLocalRef(env, classLoader);
     }
 #ifdef DEBUG
     debug(env, "%s", classLoader);
@@ -367,29 +364,31 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
         return NULL;
     }
 
-    Symbol symbol;
     char v[0x53];
     fill_DumpForSigQuit(v);
-    dl_iterate_phdr_symbol(&symbol, v);
 
-    JavaVM *jvm;
-    (*env)->GetJavaVM(env, &jvm);
-
-    if (symbol.symbol_sym == NULL) {
+    size_t total;
+    void (*DumpForSigQuit)(void *, void *) = (void (*)(void *, void *)) plt_dlsym(v, &total);
+#ifdef DEBUG
+    LOGI("non stl implementation, %s, symbol: %p, total: %d", v, DumpForSigQuit, total);
+#endif
+    if (!DumpForSigQuit) {
         return NULL;
     }
 
-#ifdef DUMP_JVM
-    char *dump = dump_jvm(jvm, &symbol);
+    JavaVM *jvm;
+    (*env)->GetJavaVM(env, &jvm);
+    char *dump = dump_jvm(jvm, DumpForSigQuit);
 #ifdef DEBUG
     LOGI("DumpForSigQuit: %s", dump);
 #endif
     bool safe = dump != NULL && strstr(dump, name) == NULL;
     free(dump);
     if (safe) {
+#if !defined(DEBUG)
         return NULL;
-    }
 #endif
+    }
 
     fill_dev_random(v);
     int random = open(v, (unsigned) O_WRONLY | (unsigned) O_CLOEXEC);
@@ -406,7 +405,7 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
             if (write(random, map, sizeof(uintptr_t *)) >= 0
                 && write(random, pair1, sizeof(uintptr_t *)) >= 0
                 && write(random, pair3, sizeof(uintptr_t *)) >= 0
-                && map->size > 1 && map->size < symbol.total) {
+                && map->size > 1 && map->size < total) {
 #ifdef DEBUG
                 LOGI("found libraries_ on jvm+0x%x, jvm: %p, libraries_: %p -> %p",
                      i * sizeof(uintptr_t), jvm, ptr, map);

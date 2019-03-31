@@ -1,1 +1,17 @@
-<manifest package="me.piebridge.genuine" />
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    package="me.piebridge.genuine">
+
+    <application>
+
+        <activity
+            android:name="android.app.NativeActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="genuine" />
+        </activity>
+
+    </application>
+
+</manifest>

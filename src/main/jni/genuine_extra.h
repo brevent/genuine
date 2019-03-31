@@ -14,8 +14,7 @@ extern "C" {
 
 // FIXME: your own methods
 
-__attribute__ ((visibility ("internal")))
-jint JNI_OnLoad_Extra(JNIEnv *env, jclass clazz, int sdk, bool *onError);
+jint JNI_OnLoad_Extra(JNIEnv *env, jclass clazz);
 
 #ifdef __cplusplus
 }

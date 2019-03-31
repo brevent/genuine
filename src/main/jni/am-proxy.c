@@ -2,32 +2,8 @@
 // Created by Thom on 2019/3/15.
 //
 
-#include "genuine.h"
+#include "common.h"
 #include "am-proxy.h"
-#include <android/log.h>
-
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-#ifndef LOGI
-#define LOGI(...) (__genuine_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__genuine_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGE
-#define LOGE(...) (__genuine_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
-#endif
-
-#ifndef __genuine_log_print
-__attribute__((__format__ (__printf__, 2, 0)))
-static void __genuine_log_print(int prio, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    __android_log_vprint(prio, TAG, fmt, ap);
-    va_end(ap);
-}
-#endif
 
 #ifdef DEBUG
 
@@ -668,15 +644,11 @@ static inline void showError(JNIEnv *env, jclass object) {
         jmethodID method = (*env)->GetMethodID(env, clazz, v1, v2);
         jstring string = (*env)->CallObjectMethod(env, object, method);
 
+        const char *name = (*env)->GetStringUTFChars(env, string, NULL);
         fill_activity_manager_service_is_s(v2); // 0x1f
-        if (string == NULL) {
-            (*env)->ExceptionClear(env);
-            LOGE(v2, NULL);
-        } else {
-            const char *name = (*env)->GetStringUTFChars(env, string, NULL);
-            LOGE(v2, name);
-            (*env)->ReleaseStringUTFChars(env, string, name);
-        }
+        LOGE(v2, name);
+
+        (*env)->ReleaseStringUTFChars(env, string, name);
         (*env)->DeleteLocalRef(env, string);
         (*env)->DeleteLocalRef(env, clazz);
     }
@@ -723,7 +695,9 @@ bool isAmProxy(JNIEnv *env, int sdk) {
         LOGW("activity manager is null");
 #endif
         if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
             (*env)->ExceptionDescribe(env);
+#endif
             (*env)->ExceptionClear(env);
         }
         goto clean3;
@@ -764,7 +738,9 @@ bool isAmProxy(JNIEnv *env, int sdk) {
     binder = (*env)->CallObjectMethod(env, activityManager, method);
     if (binder == NULL) {
         if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
             (*env)->ExceptionDescribe(env);
+#endif
             (*env)->ExceptionClear(env);
         }
         showError(env, NULL);
@@ -813,7 +789,9 @@ bool isAmProxy(JNIEnv *env, int sdk) {
 
     if (service == NULL) {
         if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
             (*env)->ExceptionDescribe(env);
+#endif
             (*env)->ExceptionClear(env);
         }
         showError(env, NULL);

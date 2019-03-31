@@ -5,27 +5,16 @@
 #include <jni.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "genuine.h"
 #include "plt.h"
+#include "libraries.h"
+#include "common.h"
 
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-
-#ifndef LOGI
-#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
-
-#ifndef GENUINE_NO_STL
+#if (defined(CHECK_XPOSED_EPIC) || defined(CHECK_SO_LIBRARY)) && !defined(GENUINE_NO_STL)
+// #warning "use stl libraries"
 
 #include <iostream>
 #include <sstream>
 #include <map>
-
-#if defined(CHECK_XPOSED_EPIC) || defined(CHECK_SO_LIBRARY)
 
 class SharedLibrary {
 public:
@@ -82,7 +71,7 @@ static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
 
 static inline void fill_DumpForSigQuit(char v[]) {
     // _ZN3art9JavaVMExt14DumpForSigQuitERNSt3__113basic_ostreamIcNS1_11char_traitsIcEEEE
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 79;
@@ -180,7 +169,7 @@ static inline void fill_DumpForSigQuit(char v[]) {
 
 static inline void fill_dev_random(char v[]) {
     // /dev/random
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 7;
@@ -207,7 +196,7 @@ static inline void fill_dev_random(char v[]) {
 
 static void inline fill_NewLocalRef(char v[]) {
     // _ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 47;
@@ -271,32 +260,46 @@ static void inline fill_NewLocalRef(char v[]) {
     v[0x32] = '\0';
 }
 
+static jobject newLocalRef(JNIEnv *env, jobject classLoader) {
+    char v[0x33];
+    fill_NewLocalRef(v);
+    jobject (*NewLocalRef)(JNIEnv *, void *) = (jobject (*)(JNIEnv *, void *)) plt_dlsym(v, NULL);
+    if (NewLocalRef != nullptr) {
+        return NewLocalRef(env, classLoader);
+    } else {
+        return classLoader;
+    }
+}
+
 jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
     if (sdk < 21) {
         return nullptr;
     }
 
-    Symbol symbol;
     char v[0x53];
     fill_DumpForSigQuit(v);
-    dl_iterate_phdr_symbol(&symbol, v);
+
+    size_t total;
+    void (*DumpForSigQuit)(void *, void *) = (void (*)(void *, void *)) plt_dlsym(v, &total);
+#ifdef DEBUG
+    LOGI("stl implementation, %s, symbol: %p, total: %d", v, DumpForSigQuit, total);
+#endif
+    if (DumpForSigQuit == nullptr) {
+        return nullptr;
+    }
 
     JavaVM *jvm;
     env->GetJavaVM(&jvm);
     std::ostringstream oss;
 
-    if (symbol.symbol_sym == nullptr) {
-        return nullptr;
-    }
-
-    void (*DumpForSigQuit)(void *, std::ostream &os);
-    DumpForSigQuit = (void (*)(void *, std::ostream &os)) (symbol.symbol_sym);
-    DumpForSigQuit(jvm, oss);
+    DumpForSigQuit(jvm, &oss);
 #ifdef DEBUG
     LOGI("%s", oss.str().c_str());
 #endif
     if (oss.str().find(std::string(name)) == std::string::npos) {
+#if !defined(DEBUG)
         return nullptr;
+#endif
     }
 
     fill_dev_random(v);
@@ -313,7 +316,7 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
             if (write(random, map, sizeof(uintptr_t *)) >= 0
                 && write(random, pair1, sizeof(uintptr_t *)) >= 0
                 && write(random, pair3, sizeof(uintptr_t *)) >= 0
-                && map->size() > 1 && map->size() < symbol.total) {
+                && map->size() > 1 && map->size() < total) {
                 std::ostringstream ss;
                 ss << ' ' << '(' << map->size() << ')' << '\n';
                 found = map;
@@ -341,11 +344,7 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
 #endif
                 if (classLoader != nullptr) {
                     if (sdk < 23) {
-                        fill_NewLocalRef(v);
-                        dl_iterate_phdr_symbol(&symbol, v);
-                        jobject (*NewLocalRef)(JNIEnv *, void *);
-                        NewLocalRef = (jobject (*)(JNIEnv *, void *)) (symbol.symbol_sym);
-                        classLoader = NewLocalRef(env, classLoader);
+                        classLoader = newLocalRef(env, classLoader);
                     }
 #ifdef DEBUG
                     debug(env, "%s", classLoader);
@@ -359,5 +358,4 @@ jobject findClassLoader(JNIEnv *env, const char *name, int sdk) {
     return nullptr;
 }
 
-#endif
 #endif

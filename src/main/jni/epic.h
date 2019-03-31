@@ -3,7 +3,7 @@
 
 #include <jni.h>
 #include <stdbool.h>
-#include "genuine.h"
+#include "common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,13 +11,11 @@ extern "C" {
 
 #ifdef CHECK_XPOSED_EPIC
 
-__attribute__ ((visibility ("internal")))
 bool antiEpic(JNIEnv *env, int sdk);
 
 #endif
 
-__attribute__ ((visibility ("internal")))
-void clearHandler(JNIEnv *env);
+void clearHandler(JNIEnv *env, int sdk);
 
 #ifdef __cplusplus
 }

@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-__attribute__ ((visibility ("internal")))
 int checkSignature(const char *path);
 
 #ifdef __cplusplus

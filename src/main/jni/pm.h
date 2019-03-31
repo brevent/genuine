@@ -11,7 +11,6 @@
 extern "C" {
 #endif
 
-__attribute__ ((visibility ("internal")))
 char *getPath(JNIEnv *env, int uid, const char *name);
 
 #ifdef __cplusplus

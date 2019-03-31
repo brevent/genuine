@@ -4,31 +4,8 @@
 
 #include <string.h>
 #include <android/log.h>
-#include "genuine.h"
+#include "common.h"
 #include "pm.h"
-
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-#ifndef LOGI
-#define LOGI(...) (__genuine_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__genuine_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGE
-#define LOGE(...) (__genuine_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
-#endif
-
-#ifndef __genuine_log_print
-__attribute__((__format__ (__printf__, 2, 0)))
-static void __genuine_log_print(int prio, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    __android_log_vprint(prio, TAG, fmt, ap);
-    va_end(ap);
-}
-#endif
 
 #ifdef DEBUG
 
@@ -642,7 +619,12 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
 #ifdef DEBUG
         LOGW("cannot find package service");
 #endif
-        (*env)->ExceptionClear(env);
+        if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
+            (*env)->ExceptionDescribe(env);
+#endif
+            (*env)->ExceptionClear(env);
+        }
         goto cleanStringPackage;
     }
 #ifdef DEBUG
@@ -678,7 +660,9 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
         LOGW("cannot call asInterface");
 #endif
         if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
             (*env)->ExceptionDescribe(env);
+#endif
             (*env)->ExceptionClear(env);
         }
         goto cleanClassIPackageManager$Stub;
@@ -706,7 +690,9 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
     debug(env, "applicationInfo: %s", applicationInfo);
     if (applicationInfo == NULL) {
         if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
             (*env)->ExceptionDescribe(env);
+#endif
             (*env)->ExceptionClear(env);
         }
         goto cleanStringPackageName;

@@ -10,13 +10,6 @@
 #include <inttypes.h>
 #include <android/log.h>
 #include <errno.h>
-#include <syscall.h>
-
-#if __has_include("genuine.h")
-#include "genuine.h"
-#else
-#error "please define genuine.h"
-#endif
 
 #include "plt.h"
 #include "inline.h"
@@ -26,44 +19,12 @@
 #include "epic.h"
 #include "am-proxy.h"
 #include "pm.h"
+#include "common.h"
+#include "openat.h"
 
 #ifdef CHECK_MOUNT
 #include "mount.h"
 #endif
-
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-#ifndef LOGI
-#define LOGI(...) (__genuine_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__genuine_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGE
-#define LOGE(...) (__genuine_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
-#endif
-
-#ifndef __genuine_log_print
-__attribute__((__format__ (__printf__, 2, 0)))
-static void __genuine_log_print(int prio, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    __android_log_vprint(prio, TAG, fmt, ap);
-    va_end(ap);
-}
-#endif
-
-enum {
-    CHECK_TRUE,
-    CHECK_FALSE,
-    CHECK_FAKE,
-    CHECK_OVERLAY,
-    CHECK_ODEX,
-    CHECK_DEX,
-    CHECK_PROXY,
-    CHECK_ERROR,
-};
 
 #if VERSION <= CHECK_ERROR
 #error "VERSION should be larger than CHECK_ERROR"
@@ -75,8 +36,6 @@ static int sdk;
 
 static int uid;
 
-static bool onError = false;
-
 #ifndef NO_CHECK_XPOSED
 static bool xposed = false;
 #endif
@@ -85,6 +44,9 @@ static jint version(JNIEnv *env, jclass clazz __unused) {
     if (uid < 10000) {
         return VERSION;
     }
+#ifdef DEBUG_GENUINE
+    LOGI("call version, env: %p", env);
+#endif
     if (genuine != CHECK_PROXY && isAmProxy(env, sdk)) {
         genuine = CHECK_PROXY;
     }
@@ -93,37 +55,6 @@ static jint version(JNIEnv *env, jclass clazz __unused) {
     } else {
         return genuine;
     }
-}
-
-static inline char *getGenuineClassName() {
-#ifdef GET_GENUINE_CLASS_NAME
-    return GET_GENUINE_CLASS_NAME();
-#else
-#ifndef GENUINE_CLAZZ
-#define GENUINE_CLAZZ "me/piebridge/Genuine"
-#endif
-    return strdup(GENUINE_CLAZZ);
-#endif
-}
-
-static inline char *getGenuinePackageName() {
-#ifdef GET_GENUINE_PACKAGE_NAME
-    return GET_GENUINE_PACKAGE_NAME();
-#else
-    static unsigned int m = 0;
-    if (m == 0) {
-        m = 20;
-    } else if (m == 23) {
-        m = 29;
-    }
-    char name[] = GENUINE_NAME;
-    unsigned int length = sizeof(name) - 1;
-    for (unsigned int i = 0; i < length; ++i) {
-        name[i] ^= ((i + length) % m);
-    }
-    name[length] = '\0';
-    return strdup(name);
-#endif
 }
 
 static inline void fill_maps(char v[]) {
@@ -459,42 +390,38 @@ enum {
     TYPE_SO,
 };
 
-static inline int openAt(const char *path) {
-    int flags = (unsigned) O_RDONLY | (unsigned) O_CLOEXEC;
-#ifdef __ANDROID__
-    return syscall(__NR_openat, AT_FDCWD, path, flags);
-#else
-    return openat(AT_FDCWD, path, flags);
-#endif
-}
-
-static inline int checkMaps(const char *maps, const char *packageName, const char *packagePath) {
+static inline int checkMaps(const char *packageName, const char *packagePath) {
     FILE *fp = NULL;
     char line[PATH_MAX];
+    char maps[0x10];
     int check = genuine;
     bool loaded = false;
 
-    int fd = openAt(maps);
-    if (fd == -1) {
+    fill_maps(maps);
+    int fd = (int) openAt(AT_FDCWD, maps, O_RDONLY);
+#ifdef DEBUG_OPENAT
+    LOGI("openat %s returns %d", maps, fd);
+#endif
+    if (fd < 0) {
         fill_cannot_open_proc_self_maps(line);
         LOGE(line);
         return CHECK_ERROR;
     }
 
     Symbol symbol;
-    char *d = calloc(1, 0x10);
-    fill_ba88(d);
+    fill_ba88(line);
     memset(&symbol, 0, sizeof(Symbol));
-    symbol.symbol = d;
-    if (dl_iterate_phdr_symbol(&symbol, NULL)) {
-        LOGE(d);
+    symbol.check = (PLT_CHECK_PLT_APP | PLT_CHECK_NAME);
+    symbol.symbol_name = (char *) line;
+    if (dl_iterate_phdr_symbol(&symbol)) {
+        LOGE(line);
         check = CHECK_ERROR;
         goto clean2;
     }
 
 #if __ANDROID_API__ >= 21 || !defined(__arm__)
     if (symbol.size == 0) {
-        LOGE(d);
+        LOGE(line);
         check = CHECK_ERROR;
         goto clean2;
     }
@@ -503,10 +430,9 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
     char mode[0x2];
     fill_r(mode);
 
-
     fp = fdopen(fd, mode);
     if (fp == NULL) {
-        fill_maps(line);
+        fill_cannot_open_proc_self_maps(line);
         LOGE(line);
         check = CHECK_ERROR;
         goto clean3;
@@ -526,26 +452,30 @@ static inline int checkMaps(const char *maps, const char *packageName, const cha
             type = TYPE_APK;
         } else if (isodex(path) || isdex(path)) {
             type = TYPE_DEX;
-        } else if (symbol.size > 0 && isso(path)) {
+        } else if (isso(path)) {
             type = TYPE_SO;
-            bool found = false;
-            for (int i = 0; i < symbol.size; ++i) {
-                if (symbol.names[i] != NULL) {
-                    if (isSame(symbol.names[i], path)) {
-                        free(symbol.names[i]);
-                        symbol.names[i] = NULL;
-                    } else {
-                        found = true;
+            if (symbol.size > 0) {
+                bool found = false;
+                for (int i = 0; i < symbol.size; ++i) {
+                    if (symbol.names[i] != NULL) {
+                        if (isSame(symbol.names[i], path)) {
+                            free(symbol.names[i]);
+                            symbol.names[i] = NULL;
+                        } else {
+                            found = true;
+                        }
                     }
                 }
-            }
-            if (!found) {
-                symbol.size = 0;
+                if (!found) {
+                    symbol.size = 0;
+                }
             }
         } else {
             type = TYPE_NON;
         }
-#ifdef DEBUG_MAPS
+#ifdef DEBUG
+        LOGI("type: %d, line: %s", type, line);
+#elif defined(DEBUG_MAPS)
         if (type != TYPE_NON) {
             LOGI(line);
         }
@@ -599,14 +529,14 @@ clean3:
     close(fd);
 
 clean2:
+    fill_cannot_find_s(line);
     if (!loaded) {
-        fill_cannot_find_s(line);
         LOGE(line, packagePath);
         check = CHECK_ERROR;
     }
     for (int i = 0; i < symbol.size; ++i) {
         if (symbol.names[i] != NULL) {
-            LOGE(symbol.names[i]);
+            LOGE(line, symbol.names[i]);
             check = CHECK_ERROR;
             free(symbol.names[i]);
             symbol.names[i] = NULL;
@@ -616,7 +546,6 @@ clean2:
         free(symbol.names);
         symbol.names = NULL;
     }
-    free(d);
 
     return check;
 }
@@ -662,6 +591,73 @@ static inline void fill_jniRegisterNativeMethods(char v[]) {
     }
     v[0x18] = '\0';
 }
+
+static inline void fill___openat(char v[]) {
+    // __openat
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 7;
+    } else if (m == 11) {
+        m = 13;
+    }
+
+    v[0x0] = '^';
+    v[0x1] = ']';
+    v[0x2] = 'l';
+    v[0x3] = 't';
+    v[0x4] = '`';
+    v[0x5] = 'h';
+    v[0x6] = 'a';
+    v[0x7] = 'u';
+    for (unsigned int i = 0; i < 0x8; ++i) {
+        v[i] ^= ((i + 0x8) % m);
+    }
+    v[0x8] = '\0';
+}
+
+static inline void fill_openat(char v[]) {
+    // openat
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
+    }
+
+    v[0x0] = 'n';
+    v[0x1] = 'r';
+    v[0x2] = 'f';
+    v[0x3] = 'j';
+    v[0x4] = 'a';
+    v[0x5] = 'u';
+    for (unsigned int i = 0; i < 0x6; ++i) {
+        v[i] ^= ((i + 0x6) % m);
+    }
+    v[0x6] = '\0';
+}
+
+static inline void fill_open(char v[]) {
+    // open
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 3;
+    } else if (m == 5) {
+        m = 7;
+    }
+
+    v[0x0] = 'n';
+    v[0x1] = 'r';
+    v[0x2] = 'e';
+    v[0x3] = 'o';
+    for (unsigned int i = 0; i < 0x4; ++i) {
+        v[i] ^= ((i + 0x4) % m);
+    }
+    v[0x4] = '\0';
+}
+
 #endif
 
 // FIXME: define methods in your own class
@@ -784,7 +780,7 @@ static inline void fill_sdk_d_genuine_d(char v[]) {
 
 static inline void fill_add_sigcont(char v[]) {
     // add sigcont handler
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 17;
@@ -819,7 +815,7 @@ static inline void fill_add_sigcont(char v[]) {
 
 static inline void fill_received_sigcont(char v[]) {
     // received sigcont
-    static int m = 0;
+    static unsigned int m = 0;
 
     if (m == 0) {
         m = 13;
@@ -943,87 +939,6 @@ static void handler(int sig __unused) {
     LOGI(v);
 }
 
-static inline void fill_syscall_is_hooked(char v[]) {
-    // syscall is hooked
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 13;
-    } else if (m == 17) {
-        m = 19;
-    }
-
-    v[0x0] = 'w';
-    v[0x1] = '|';
-    v[0x2] = 'u';
-    v[0x3] = 'd';
-    v[0x4] = 'i';
-    v[0x5] = 'e';
-    v[0x6] = 'f';
-    v[0x7] = '+';
-    v[0x8] = 'e';
-    v[0x9] = 's';
-    v[0xa] = '!';
-    v[0xb] = 'j';
-    v[0xc] = 'l';
-    v[0xd] = 'k';
-    v[0xe] = 'n';
-    v[0xf] = 'c';
-    v[0x10] = 'c';
-    for (unsigned int i = 0; i < 0x11; ++i) {
-        v[i] ^= ((i + 0x11) % m);
-    }
-    v[0x11] = '\0';
-}
-
-static inline void fill_syscall(char v[]) {
-    // syscall
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 5;
-    } else if (m == 7) {
-        m = 11;
-    }
-
-    v[0x0] = 'q';
-    v[0x1] = 'z';
-    v[0x2] = 'w';
-    v[0x3] = 'c';
-    v[0x4] = '`';
-    v[0x5] = 'n';
-    v[0x6] = 'o';
-    for (unsigned int i = 0; i < 0x7; ++i) {
-        v[i] ^= ((i + 0x7) % m);
-    }
-    v[0x7] = '\0';
-}
-
-static bool check_inline_hook() {
-    char v[0x12];
-    Symbol s;
-    fill_syscall(v);
-    void *symbol = dlsym(RTLD_NEXT, v);
-    if (dl_iterate_phdr_symbol(&s, v)) {
-        fill_syscall_is_hooked(v);
-        LOGE(v);
-        return false;
-    }
-    if (symbol != s.symbol_sym) {
-#if defined(DEBUG_HOOK) || defined(DEBUG)
-        LOGI("syscall, dlsym: %p, dl_iter: %p", symbol, s.symbol_sym);
-#endif
-        fill_syscall_is_hooked(v);
-        LOGE(v);
-    }
-    if (isInlineHooked(s.symbol_sym)) {
-        fill_syscall_is_hooked(v);
-        LOGE(v);
-        return false;
-    }
-    return true;
-}
-
 static inline void fill_invalid_signature_path_s(char v[]) {
     // invalid signature, path: %s
     static unsigned int m = 0;
@@ -1067,10 +982,81 @@ static inline void fill_invalid_signature_path_s(char v[]) {
     v[0x1b] = '\0';
 }
 
+#ifdef DEBUG_HOOK_IO
+
+static void check_hook_function(void *handle, const char *name) {
+    void *symbol = dlsym(handle, name);
+    if (symbol != NULL && isInlineHooked(symbol)) {
+        LOGI("%s is hooked", name);
+    }
+}
+
+#define HOOK_SYMBOL(x, y) check_hook_function(x, #y)
+
+static void check_inline_hook_io() {
+    void *handle = dlopen("libc.so", RTLD_NOW);
+    if (handle) {
+        HOOK_SYMBOL(handle, faccessat);
+        HOOK_SYMBOL(handle, __openat);
+        HOOK_SYMBOL(handle, fchmodat);
+        HOOK_SYMBOL(handle, fchownat);
+        HOOK_SYMBOL(handle, renameat);
+        HOOK_SYMBOL(handle, fstatat64);
+        HOOK_SYMBOL(handle, __statfs);
+        HOOK_SYMBOL(handle, __statfs64);
+        HOOK_SYMBOL(handle, mkdirat);
+        HOOK_SYMBOL(handle, mknodat);
+        HOOK_SYMBOL(handle, truncate);
+        HOOK_SYMBOL(handle, linkat);
+        HOOK_SYMBOL(handle, readlinkat);
+        HOOK_SYMBOL(handle, unlinkat);
+        HOOK_SYMBOL(handle, symlinkat);
+        HOOK_SYMBOL(handle, utimensat);
+        HOOK_SYMBOL(handle, __getcwd);
+        HOOK_SYMBOL(handle, chdir);
+        HOOK_SYMBOL(handle, execve);
+    }
+    dlclose(handle);
+}
+
+#endif
+
+static inline void fill_openat_is_hooked(char v[]) {
+    // openAt is hooked
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 13;
+    } else if (m == 17) {
+        m = 19;
+    }
+
+    v[0x0] = 'l';
+    v[0x1] = 't';
+    v[0x2] = '`';
+    v[0x3] = 'h';
+    v[0x4] = 'F';
+    v[0x5] = '|';
+    v[0x6] = ')';
+    v[0x7] = 'c';
+    v[0x8] = 'x';
+    v[0x9] = ',';
+    v[0xa] = 'h';
+    v[0xb] = 'n';
+    v[0xc] = 'm';
+    v[0xd] = 'h';
+    v[0xe] = 'a';
+    v[0xf] = 'a';
+    for (unsigned int i = 0; i < 0x10; ++i) {
+        v[i] ^= ((i + 0x10) % m);
+    }
+    v[0x10] = '\0';
+}
+
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
-    char v1[0x1c];
+    char v1[0x20];
     char prop[PROP_VALUE_MAX] = {0};
 
     signal(SIGCONT, handler);
@@ -1083,6 +1069,28 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 
     uid = getuid();
 
+#ifdef DEBUG_HOOK_SELF
+    LOGI("+++ whale +++");
+    check_inline_hook_whale();
+    LOGI("--- whale ----");
+#if defined(__arm__) || defined(__aarch64__)
+    LOGI("+++ hookzz-b +++");
+    check_inline_hook_hookzz_b();
+    LOGI("--- hookzz-b ---");
+    LOGI("+++ hookzz +++");
+    check_inline_hook_hookzz();
+    LOGI("--- hookzz ---");
+#endif
+#if defined(__arm__)
+    LOGI("+++ hookzz-b +++");
+    check_inline_hook_hookzz_b();
+    LOGI("--- hookzz-b ---");
+    LOGI("+++ substrate +++");
+    check_inline_hook_substrate();
+    LOGI("--- substrate ---");
+#endif
+#endif
+
 #ifdef DEBUG
     LOGI("JNI_OnLoad start, sdk: %d, uid: %d", sdk, uid);
 #endif
@@ -1091,14 +1099,19 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         return JNI_ERR;
     }
 
-    if (!check_inline_hook()) {
-        clearHandler(env);
-        return JNI_ERR;
+#ifdef DEBUG_HOOK_IO
+    check_inline_hook_io();
+#endif
+
+    if (isInlineHooked(&openAt)) {
+        fill_openat_is_hooked(v1);
+        LOGE(v1);
+        genuine = CHECK_FATAL;
+        goto done;
     }
 
     char *genuineClassName = getGenuineClassName();
     if ((clazz = (*env)->FindClass(env, genuineClassName)) == NULL) {
-        clearHandler(env);
         return JNI_ERR;
     }
 #ifdef GENUINE_CLAZZ
@@ -1114,15 +1127,15 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     methods[0].fnPtr = version;
 
     if ((*env)->RegisterNatives(env, clazz, methods, 1) < 0) {
-        clearHandler(env);
+        clearHandler(env, sdk);
         return JNI_ERR;
     }
 
 #ifdef DEBUG
     LOGI("JNI_OnLoad_Extra start");
 #endif
-    if (JNI_OnLoad_Extra(env, clazz, sdk, &onError) < 0) {
-        clearHandler(env);
+    if (JNI_OnLoad_Extra(env, clazz) < 0) {
+        clearHandler(env, sdk);
         return JNI_ERR;
     }
 
@@ -1144,15 +1157,12 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         goto clean;
     }
 
-    char maps[0x10];
-    fill_maps(maps);
-
     if (sdk >= 21) {
 #ifndef NO_CHECK_XPOSED
 #ifdef DEBUG
         LOGI("antiXposed start");
 #endif
-        antiXposed(env, clazz, maps, sdk, &xposed);
+        antiXposed(env, clazz, sdk, &xposed);
 #endif
 
 #ifndef NO_CHECK_XPOSED_EDXPOSED
@@ -1178,18 +1188,22 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 #ifdef DEBUG
     LOGI("checkMaps start");
 #endif
-    genuine = checkMaps(maps, packageName, packagePath);
+    genuine = checkMaps(packageName, packagePath);
 #endif
 
 #ifdef CHECK_HOOK
-    if (genuine == CHECK_TRUE) {
-        Symbol symbol;
-        fill_jniRegisterNativeMethods(v1); // 0x19
-        if (dl_iterate_phdr_symbol(&symbol, v1)) {
-            LOGW(v1);
-            genuine = CHECK_FALSE;
-        }
-    }
+#define CHECK_HOOK_SYMBOL(x) do {\
+    if (genuine == CHECK_TRUE) {\
+        fill_##x(v1);\
+        if (isPltHooked(v1, true)) {\
+            genuine = CHECK_FALSE;\
+            }\
+        }\
+    } while(0);
+    CHECK_HOOK_SYMBOL(open);
+    CHECK_HOOK_SYMBOL(openat);
+    CHECK_HOOK_SYMBOL(__openat);
+    CHECK_HOOK_SYMBOL(jniRegisterNativeMethods);
 #endif
 
 #if defined(CHECK_ARM64) && defined(__arm__)
@@ -1213,36 +1227,25 @@ clean:
     (*env)->DeleteLocalRef(env, clazz);
 
 #ifdef DEBUG
-    LOGI("JNI_OnLoad end, genuine: %d, onError: %d", genuine, onError);
+    LOGI("JNI_OnLoad end, genuine: %d", genuine);
 #endif
-
-    switch (genuine) {
-        case CHECK_FALSE:
-            break;
-        case CHECK_OVERLAY:
-            break;
-        case CHECK_ODEX:
-            break;
-        case CHECK_PROXY:
-            break;
-        case CHECK_DEX:
-            if (!onError) {
-                break;
-            }
-        case CHECK_FAKE:
-        case CHECK_ERROR:
-            clearHandler(env);
-            return JNI_ERR;
-        default:
-            break;
-    }
 
     if (genuine != CHECK_PROXY && isAmProxy(env, sdk)) {
         genuine = CHECK_PROXY;
     }
 
+done:
     fill_sdk_d_genuine_d(v1); // 0x15
     LOGI(v1, sdk, genuine);
 
-    return JNI_VERSION_1_6;
+    if (genuine != CHECK_TRUE) {
+        clearHandler(env, sdk);
+    }
+
+    if(setGenuine(env, genuine)) {
+        return JNI_VERSION_1_6;
+    } else {
+        return JNI_ERR;
+    }
+
 }

@@ -60,13 +60,46 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 
 /* check use arm32 on arm64-v8a */
 // #define CHECK_ARM64
+
+/* genuine false handler */
+// #define GENUINE_FALSE_CRASH
+// #define GENUINE_FALSE_NATIVE
+
+/* genuine fake handler */
+// #define GENUINE_FAKE_CRASH
+#define GENUINE_FAKE_NATIVE
+
+/* genuine overlay handler */
+// #define GENUINE_OVERLAY_CRASH
+// #define GENUINE_OVERLAY_NATIVE
+
+/* genuine odex handler */
+// #define GENUINE_ODEX_CRASH
+// #define GENUINE_ODEX_NATIVE
+
+/* genuine dex handler */
+// #define GENUINE_DEX_CRASH
+// #define GENUINE_DEX_NATIVE
+
+/* genuine proxy handler */
+// #define GENUINE_PROXY_CRASH
+// #define GENUINE_PROXY_NATIVE
+
+/* genuine error handler */
+// #define GENUINE_ERROR_CRASH
+#define GENUINE_ERROR_NATIVE
+
+/* genuine fatal handler */
+// #define GENUINE_FATAL_CRASH
+#define GENUINE_FATAL_NATIVE
+
 ```
 
 # practices
 
 1. make sure libgenuine.so always loaded
 
-2. crash for fake signature or check error
+2. crash or show native activity for fake, error, fatal
 
 # And license?
 

@@ -5,13 +5,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <syscall.h>
 
 #ifdef MAIN
 #include <stdio.h>
 #else
 
-#include "genuine.h"
+#include "common.h"
+#include "openat.h"
 
 #endif
 
@@ -35,15 +35,6 @@ static bool isApkSigBlock42(const char *buffer) {
            && *++buffer == '2';
 }
 
-static inline int openAt(const char *path) {
-    int flags = (unsigned) O_RDONLY | (unsigned) O_CLOEXEC;
-#ifdef __ANDROID__
-    return syscall(__NR_openat, AT_FDCWD, path, flags);
-#else
-    return openat(AT_FDCWD, path, flags);
-#endif
-}
-
 int checkSignature(const char *path) {
     unsigned char buffer[0x11] = {0};
     uint32_t size4;
@@ -54,8 +45,11 @@ int checkSignature(const char *path) {
 #endif
 
     int sign = -1;
-    int fd = openAt(path);
-    if (fd == -1) {
+    int fd = (int) openAt(AT_FDCWD, path, O_RDONLY);
+#ifdef DEBUG_OPENAT
+    LOGI("openat %s returns %d", path, fd);
+#endif
+    if (fd < 0) {
         return sign;
     }
 

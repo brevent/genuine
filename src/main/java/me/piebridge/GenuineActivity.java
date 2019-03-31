@@ -1,28 +1,14 @@
 package me.piebridge;
 
-import android.content.Context;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import me.piebridge.genuine.BuildConfig;
 import me.piebridge.genuine.R;
 
 /**
  * Created by thom on 2018/10/31.
  */
 public class GenuineActivity extends AppCompatActivity {
-
-    private static final String TAG = "Genuine";
 
     private static final String FRAGMENT_FAKE = "fragment-fake";
 

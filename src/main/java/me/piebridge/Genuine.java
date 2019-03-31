@@ -10,9 +10,6 @@ import java.lang.reflect.Member;
 @Keep
 public class Genuine {
 
-    /* cannot check */
-    public static final int CHECK_UNKNOWN = -1;
-
     /* check true, return defined VERSION */
     public static final int CHECK_TRUE = 0;
 
@@ -36,6 +33,9 @@ public class Genuine {
 
     /* cannot check */
     public static final int CHECK_ERROR = 7;
+
+    /* fatal hook */
+    public static final int CHECK_FATAL = 8;
 
     static {
         System.loadLibrary("genuine");

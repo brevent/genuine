@@ -32,7 +32,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation "androidx.appcompat:appcompat:${rootProject.appcompatVersion}"
 }
 
 task deleteNativeBuild(type: Delete) {

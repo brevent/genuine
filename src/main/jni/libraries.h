@@ -8,7 +8,6 @@
 extern "C" {
 #endif
 
-__attribute__ ((visibility ("internal")))
 jobject findClassLoader(JNIEnv *env, const char *name, int sdk);
 
 #ifdef __cplusplus

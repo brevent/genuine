@@ -8,23 +8,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include "plt.h"
-
-#if __has_include("genuine.h")
-#include "genuine.h"
-#endif
-
-#ifndef TAG
-#define TAG "Genuine"
-#endif
-#ifndef LOGI
-#define LOGI(...) (__android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGW
-#define LOGW(...) (__android_log_print(ANDROID_LOG_WARN, TAG, __VA_ARGS__))
-#endif
-#ifndef LOGE
-#define LOGE(...) (__android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__))
-#endif
+#include "common.h"
 
 /*
  * reference: https://android.googlesource.com/platform/bionic/+/master/linker/linker_soinfo.cpp
@@ -161,16 +145,16 @@ find_symbol(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, const char *symbol)
 #endif
 
 #ifdef DEBUG_PLT
-#if defined __x86_64__ || defined __x86_64
+#if defined(__x86_64__)
 #define R_JUMP_SLOT R_X86_64_JUMP_SLOT
 #define ELF_R_TYPE  ELF64_R_TYPE
-#elif defined __i386__ || defined __i386
+#elif defined(__i386__)
 #define R_JUMP_SLOT R_386_JMP_SLOT
 #define ELF_R_TYPE  ELF32_R_TYPE
-#elif defined __arm__ || defined __arm
+#elif defined(__arm__)
 #define R_JUMP_SLOT R_ARM_JUMP_SLOT
 #define ELF_R_TYPE  ELF32_R_TYPE
-#elif defined __aarch64__ || defined __aarch64
+#elif defined(__aarch64__)
 #define R_JUMP_SLOT R_AARCH64_JUMP_SLOT
 #define ELF_R_TYPE  ELF64_R_TYPE
 #else
@@ -221,28 +205,37 @@ static ElfW(Addr) *find_plt(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, con
     return NULL;
 }
 
-static inline bool isSystem(const char *str) {
+static inline bool isDataApp(const char *str) {
     return str != NULL
            && *str == '/'
-           && *++str == 's'
-           && *++str == 'y'
-           && *++str == 's'
+           && *++str == 'd'
+           && *++str == 'a'
            && *++str == 't'
-           && *++str == 'e'
-           && *++str == 'm'
+           && *++str == 'a'
+           && *++str == '/'
+           && *++str == 'a'
+           && *++str == 'p'
+           && *++str == 'p'
            && *++str == '/';
 }
 
-static inline bool isVendor(const char *str) {
-    return str != NULL
-           && *str == '/'
-           && *++str == 'v'
-           && *++str == 'e'
-           && *++str == 'n'
-           && *++str == 'd'
-           && *++str == 'o'
-           && *++str == 'r'
-           && *++str == '/';
+static inline bool isso(const char *str) {
+    const char *dot = strrchr(str, '.');
+    return dot != NULL
+           && *++dot == 's'
+           && *++dot == 'o'
+           && (*++dot == '\0' || *dot == '\r' || *dot == '\n');
+}
+
+static inline bool should_check_plt(Symbol *symbol, struct dl_phdr_info *info) {
+    const char *path = info->dlpi_name;
+    if (symbol->check & PLT_CHECK_PLT_ALL) {
+        return isso(path);
+    } else if (symbol->check & PLT_CHECK_PLT_APP) {
+        return isso(path) && (*path != '/' || isDataApp(path));
+    } else {
+        return false;
+    }
 }
 
 static int callback(struct dl_phdr_info *info, __unused size_t size, void *data) {
@@ -258,21 +251,21 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
         }
         ElfW(Dyn) *base_addr = (ElfW(Dyn) *) (info->dlpi_addr + phdr.p_vaddr);
         ElfW(Addr) *addr;
-        addr = find_plt(info, base_addr, symbol->symbol);
+        addr = should_check_plt(symbol, info) ? find_plt(info, base_addr, symbol->symbol_name) : NULL;
         if (addr != NULL) {
             if (symbol->symbol_plt != NULL) {
                 ElfW(Addr) *addr_value = (ElfW(Addr) *) *addr;
                 ElfW(Addr) *symbol_plt_value = (ElfW(Addr) *) *symbol->symbol_plt;
                 if (addr_value != symbol_plt_value) {
 #ifdef DEBUG
-                    LOGW("%s, plt %p -> %p != %p", symbol->symbol, addr, addr_value,
+                    LOGW("%s, plt %p -> %p != %p", symbol->symbol_name, addr, addr_value,
                          symbol_plt_value);
 #endif
                     return 1;
                 }
             }
             symbol->symbol_plt = addr;
-            if (symbol->size != -1 && !isSystem(info->dlpi_name) && !isVendor(info->dlpi_name)) {
+            if (symbol->check & PLT_CHECK_NAME) {
                 if (symbol->size == 0) {
                     symbol->size = 1;
                     symbol->names = calloc(1, sizeof(char *));
@@ -286,16 +279,19 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                 symbol->names[symbol->size - 1] = strdup(info->dlpi_name);
             }
         }
-        addr = find_symbol(info, base_addr, symbol->symbol);
+        addr = find_symbol(info, base_addr, symbol->symbol_name);
         if (addr != NULL) {
             symbol->symbol_sym = addr;
+            if (symbol->check == PLT_CHECK_SYM_ONE) {
+                return PLT_CHECK_SYM_ONE;
+            }
         }
         if (symbol->symbol_plt != NULL && symbol->symbol_sym != NULL) {
             ElfW(Addr) *symbol_plt_value = (ElfW(Addr) *) *symbol->symbol_plt;
             // stop if unmatch
             if (symbol_plt_value != symbol->symbol_sym) {
 #ifdef DEBUG
-                LOGW("%s, plt: %p -> %p != %p", symbol->symbol, symbol->symbol_plt,
+                LOGW("%s, plt: %p -> %p != %p", symbol->symbol_name, symbol->symbol_plt,
                      symbol_plt_value, symbol->symbol_sym);
 #endif
                 return 1;
@@ -305,16 +301,38 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
     return 0;
 }
 
-int dl_iterate_phdr_symbol(Symbol *symbol, const char *name) {
+void *plt_dlsym(const char *name, size_t *total) {
+    Symbol symbol;
+    memset(&symbol, 0, sizeof(Symbol));
+    if (total == NULL) {
+        symbol.check = PLT_CHECK_SYM_ONE;
+    }
+    symbol.symbol_name = name;
+    dl_iterate_phdr_symbol(&symbol);
+    if (total != NULL) {
+        *total = symbol.total;
+    }
+    return symbol.symbol_sym;
+}
+
+bool isPltHooked(const char *name, bool all) {
+    Symbol symbol;
+    memset(&symbol, 0, sizeof(Symbol));
+    symbol.check = all ? PLT_CHECK_PLT_ALL : PLT_CHECK_PLT_APP;
+    symbol.symbol_name = name;
+    return dl_iterate_phdr_symbol(&symbol) ? true : false;
+}
+
+/**
+ * symbol->check PLT_CHECK_PLT | PLT_CHECK_NAME
+ * @param symbol
+ * @return
+ */
+int dl_iterate_phdr_symbol(Symbol *symbol) {
     int result;
 #ifdef DEBUG_PLT
     LOGI("start dl_iterate_phdr: %s", name);
 #endif
-    if (name != NULL) {
-        memset(symbol, 0, sizeof(Symbol));
-        symbol->size = -1;
-        symbol->symbol = name;
-    }
 #if __ANDROID_API__ >= 21 || !defined(__arm__)
     result = dl_iterate_phdr(callback, symbol);
 #else

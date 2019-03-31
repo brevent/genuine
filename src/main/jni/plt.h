@@ -13,17 +13,26 @@
 extern "C" {
 #endif
 
+#define PLT_CHECK_PLT_APP ((unsigned short) 0x1u)
+#define PLT_CHECK_PLT_ALL ((unsigned short) 0x2u)
+#define PLT_CHECK_NAME    ((unsigned short) 0x4u)
+#define PLT_CHECK_SYM_ONE ((unsigned short) 0x8u)
+
 typedef struct Symbol {
-    const char *symbol;
+    unsigned short check;
+    unsigned short size;
+    size_t total;
     ElfW(Addr) *symbol_plt;
     ElfW(Addr) *symbol_sym;
-    unsigned int total;
-    int size;
+    const char *symbol_name;
     char **names;
 } Symbol;
 
-__attribute__ ((visibility ("internal")))
-int dl_iterate_phdr_symbol(Symbol *symbol, const char *name);
+int dl_iterate_phdr_symbol(Symbol *symbol);
+
+void *plt_dlsym(const char *name, size_t *total);
+
+bool isPltHooked(const char *name, bool all);
 
 #ifdef __cplusplus
 }
