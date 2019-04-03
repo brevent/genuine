@@ -536,8 +536,10 @@ clean2:
     }
     for (int i = 0; i < symbol.size; ++i) {
         if (symbol.names[i] != NULL) {
-            LOGE(line, symbol.names[i]);
-            check = CHECK_ERROR;
+            if (strchr(symbol.names[i], '!') == NULL) {
+                LOGE(line, symbol.names[i]);
+                check = CHECK_ERROR;
+            }
             free(symbol.names[i]);
             symbol.names[i] = NULL;
         }
@@ -1103,6 +1105,9 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     check_inline_hook_io();
 #endif
 
+#ifdef DEBUG_MAPS
+    LOGI("openAt: %p", &openAt);
+#endif
     if (isInlineHooked(&openAt)) {
         fill_openat_is_hooked(v1);
         LOGE(v1);
