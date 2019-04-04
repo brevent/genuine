@@ -10,7 +10,9 @@ import me.piebridge.genuine.BuildConfig;
 public class GenuineApplication extends Application {
 
     static {
-        System.loadLibrary("genuine");
+        System.loadLibrary(String.valueOf(new char[] {
+                'g', 'e', 'n', 'u', 'i', 'n', 'e'
+        }));
     }
 
     private boolean mFake;
