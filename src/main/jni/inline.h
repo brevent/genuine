@@ -12,6 +12,8 @@
 extern "C" {
 #endif
 
+bool setRead(void *symbol);
+
 bool isInlineHooked(void *symbol);
 
 #ifdef DEBUG_HOOK_SELF

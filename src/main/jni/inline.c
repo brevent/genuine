@@ -3,6 +3,10 @@
 //
 
 #include <stdio.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 #include "inline.h"
 #include "common.h"
 
@@ -305,4 +309,23 @@ bool isInlineHooked(void *symbol) {
 #endif
 #endif
     return false;
+}
+
+bool setRead(void *symbol) {
+    uintptr_t address = (uintptr_t) symbol;
+    uintptr_t page_size = (uintptr_t) getpagesize();
+    uintptr_t base = address & ~(page_size - 1);
+    // inline check read at most 20 bytes
+    uintptr_t end = (address + 20 + page_size - 1) & -page_size;
+#ifdef DEBUG
+    LOGI("set r+x from %p to %p", base, end);
+#endif
+    if (mprotect((void *) base, end - base, PROT_READ | PROT_EXEC)) {
+#ifdef DEBUG
+        LOGW("cannot mprotect: %s", strerror(errno));
+#endif
+        return false;
+    } else {
+        return true;
+    }
 }

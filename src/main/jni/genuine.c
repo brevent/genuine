@@ -988,7 +988,11 @@ static inline void fill_invalid_signature_path_s(char v[]) {
 
 static void check_hook_function(void *handle, const char *name) {
     void *symbol = dlsym(handle, name);
-    if (symbol != NULL && isInlineHooked(symbol)) {
+#ifdef DEBUG
+    void *symbol2 = plt_dlsym(name, NULL);
+    LOGI("symbol: %s, dlsym: %p, dl_iterate_phdr: %p", name, symbol, symbol2);
+#endif
+    if (symbol != NULL && setRead(symbol) && isInlineHooked(symbol)) {
         LOGI("%s is hooked", name);
     }
 }
