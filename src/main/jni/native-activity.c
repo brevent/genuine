@@ -390,6 +390,19 @@ static void onNativeWindowCreated(ANativeActivity *activity, ANativeWindow *wind
     ANativeWindow_Buffer buffer = {0};
     ANativeWindow_lock(window, &buffer, NULL);
 
+#define FORMAT AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM
+    if (buffer.format != FORMAT) {
+        ANativeWindow_setBuffersGeometry(window, buffer.width, buffer.height, FORMAT);
+    }
+    uint32_t *bits = buffer.bits;
+    for (int i = 0; i < buffer.width; ++i) {
+        bits[i] = 0xFF000000;
+    }
+    for (int i = 1; i < buffer.height; ++i) {
+        bits += buffer.stride;
+        memcpy(bits, buffer.bits, buffer.width * sizeof(uint32_t));
+    }
+
     JNIEnv *env = activity->env;
     jstring label = getLabel(env, activity->clazz);
     jobject bitmap = asBitmap(env, (int) (buffer.width * 0.618), label);
