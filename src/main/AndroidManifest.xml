@@ -1,8 +1,12 @@
 <manifest
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="me.piebridge.genuine">
 
-    <application>
+    <!-- extractNativeLibs must be true to support Android 6.0. -->
+    <application
+        android:extractNativeLibs="true"
+        tools:ignore="UnusedAttribute">
 
         <activity
             android:name="android.app.NativeActivity"
