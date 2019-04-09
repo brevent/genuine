@@ -220,6 +220,9 @@ static inline bool isDataApp(const char *str) {
 }
 
 static inline bool isso(const char *str) {
+    if (str == NULL) {
+        return false;
+    }
     const char *dot = strrchr(str, '.');
     return dot != NULL
            && *++dot == 's'
@@ -230,15 +233,21 @@ static inline bool isso(const char *str) {
 static inline bool should_check_plt(Symbol *symbol, struct dl_phdr_info *info) {
     const char *path = info->dlpi_name;
     if (symbol->check & PLT_CHECK_PLT_ALL) {
-        return isso(path);
+        return true;
     } else if (symbol->check & PLT_CHECK_PLT_APP) {
-        return isso(path) && (*path != '/' || isDataApp(path));
+        return *path != '/' || isDataApp(path);
     } else {
         return false;
     }
 }
 
 static int callback(struct dl_phdr_info *info, __unused size_t size, void *data) {
+    if (!isso(info->dlpi_name)) {
+#ifdef DEBUG
+        LOGW("ignore non-so: %s", info->dlpi_name);
+#endif
+        return 0;
+    }
     Symbol *symbol = (Symbol *) data;
 #if 0
     LOGI("Name: \"%s\" (%d segments)", info->dlpi_name, info->dlpi_phnum);
