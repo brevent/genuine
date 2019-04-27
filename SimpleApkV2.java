@@ -154,7 +154,11 @@ public class SimpleApkV2 {
                 "\n" +
                 "/* genuine fatal handler */\n" +
                 "// #define GENUINE_FATAL_CRASH\n" +
-                "#define GENUINE_FATAL_NATIVE";
+                "#define GENUINE_FATAL_NATIVE\n" +
+                "\n" +
+                "/* genuine noapk handler */\n" +
+                "// #define GENUINE_NOAPK_CRASH\n" +
+                "#define GENUINE_NOAPK_NATIVE";
         System.out.print(extra);
     }
 

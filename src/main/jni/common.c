@@ -88,6 +88,15 @@ static bool onCheckFatal(JNIEnv *env __unused) {
     return true;
 }
 
+static bool onCheckNoapk(JNIEnv *env __unused) {
+#if defined(GENUINE_NOAPK_CRASH)
+    return false;
+#elif defined(GENUINE_NOAPK_NATIVE)
+    start_native_activity_async(env);
+#endif
+    return true;
+}
+
 bool setGenuine(JNIEnv *env, int genuine) {
     mGenuine = genuine;
     switch (genuine) {
@@ -109,6 +118,8 @@ bool setGenuine(JNIEnv *env, int genuine) {
             return onCheckError(env);
         case CHECK_FATAL:
             return onCheckFatal(env);
+        case CHECK_NOAPK:
+            return onCheckNoapk(env);
         default:
             return true;
     }

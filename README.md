@@ -93,6 +93,10 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 // #define GENUINE_FATAL_CRASH
 #define GENUINE_FATAL_NATIVE
 
+/* genuine noapk handler */
+// #define GENUINE_NOAPK_CRASH
+#define GENUINE_NOAPK_NATIVE
+
 ```
 
 # practices

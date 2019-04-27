@@ -37,6 +37,9 @@ public class Genuine {
     /* fatal hook */
     public static final int CHECK_FATAL = 8;
 
+    /* noapk */
+    public static final int CHECK_NOAPK = 9;
+
     static {
         System.loadLibrary("genuine");
     }

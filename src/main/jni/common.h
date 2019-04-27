@@ -29,6 +29,7 @@ enum {
     CHECK_PROXY,
     CHECK_ERROR,
     CHECK_FATAL,
+    CHECK_NOAPK,
 };
 
 #ifndef TAG

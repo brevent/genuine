@@ -53,6 +53,7 @@ int checkSignature(const char *path) {
         return sign;
     }
 
+    sign = 1;
     // https://en.wikipedia.org/wiki/Zip_(file_format)#End_of_central_directory_record_(EOCD)
     for (int i = 0;; ++i) {
         unsigned short n;
@@ -62,7 +63,6 @@ int checkSignature(const char *path) {
             lseek(fd, -22, SEEK_CUR);
             read(fd, &size4, 4);
             if ((size4 ^ 0xcafebabeu) == 0xccfbf1eeu) {
-                sign = 1;
 #ifdef MAIN
                 if (i > 0) {
                     printf("warning: comment length is %d\n", i);

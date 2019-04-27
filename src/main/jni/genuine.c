@@ -1155,11 +1155,14 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         LOGE(v1, packageName);
         genuine = CHECK_FAKE;
         goto clean;
-    } else if (checkSignature(packagePath)) {
-        fill_invalid_signature_path_s(v1);
-        LOGE(v1, packagePath);
-        genuine = CHECK_FAKE;
-        goto clean;
+    } else {
+        int sign = checkSignature(packagePath);
+        if (sign) {
+            fill_invalid_signature_path_s(v1);
+            LOGE(v1, packagePath);
+            genuine = sign < 0 ? CHECK_NOAPK : CHECK_FAKE;
+            goto clean;
+        }
     }
 
     if (uid < 10000) {
