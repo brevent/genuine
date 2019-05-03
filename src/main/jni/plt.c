@@ -9,6 +9,7 @@
 #include <dlfcn.h>
 #include "plt.h"
 #include "common.h"
+#include "path.h"
 
 /*
  * reference: https://android.googlesource.com/platform/bionic/+/master/linker/linker_soinfo.cpp
@@ -205,20 +206,6 @@ static ElfW(Addr) *find_plt(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, con
     return NULL;
 }
 
-static inline bool isDataApp(const char *str) {
-    return str != NULL
-           && *str == '/'
-           && *++str == 'd'
-           && *++str == 'a'
-           && *++str == 't'
-           && *++str == 'a'
-           && *++str == '/'
-           && *++str == 'a'
-           && *++str == 'p'
-           && *++str == 'p'
-           && *++str == '/';
-}
-
 static inline bool isso(const char *str) {
     if (str == NULL) {
         return false;
@@ -235,7 +222,7 @@ static inline bool should_check_plt(Symbol *symbol, struct dl_phdr_info *info) {
     if (symbol->check & PLT_CHECK_PLT_ALL) {
         return true;
     } else if (symbol->check & PLT_CHECK_PLT_APP) {
-        return *path != '/' || isDataApp(path);
+        return *path != '/' || isThirdParty(path);
     } else {
         return false;
     }

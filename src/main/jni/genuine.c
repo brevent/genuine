@@ -21,6 +21,7 @@
 #include "pm.h"
 #include "common.h"
 #include "openat.h"
+#include "path.h"
 
 #ifdef CHECK_MOUNT
 #include "mount.h"
@@ -331,20 +332,6 @@ static inline void fill_ba88(char v[]) {
     v[0xf] = '\0';
 }
 
-static inline bool isData(const char *str) {
-    return str != NULL
-           && *str == '/'
-           && *++str == 'd'
-           && *++str == 'a'
-           && *++str == 't'
-           && *++str == 'a'
-           && *++str == '/'
-           && *++str == 'a'
-           && *++str == 'p'
-           && *++str == 'p'
-           && *++str == '/';
-}
-
 static inline bool isSame(const char *path1, const char *path2) {
     if (path1[0] == '/') {
         return strcmp(path1, path2) == 0;
@@ -501,7 +488,7 @@ static inline int checkMaps(const char *packageName, const char *packagePath) {
                 }
 #endif
             }
-        } else if (isData(path)) {
+        } else if (isThirdParty(path)) {
             if (type == TYPE_DEX) {
 #ifndef NO_CHECK_XPOSED
                 if (xposed) {
