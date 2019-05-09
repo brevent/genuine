@@ -31,4 +31,8 @@ public class GenuineApplication extends Application {
         return mFake;
     }
 
+    public final void setGenuine() {
+        mFake = false;
+    }
+
 }
