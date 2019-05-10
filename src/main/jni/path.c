@@ -45,3 +45,17 @@ bool isThirdParty(const char *str) {
         return true;
     }
 }
+
+bool isDataApp(const char *str) {
+    return str != NULL
+           && *str == '/'
+           && *++str == 'd'
+           && *++str == 'a'
+           && *++str == 't'
+           && *++str == 'a'
+           && *++str == '/'
+           && *++str == 'a'
+           && *++str == 'p'
+           && *++str == 'p'
+           && *++str == '/';
+}

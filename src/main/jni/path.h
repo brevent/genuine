@@ -9,4 +9,6 @@
 
 bool isThirdParty(const char *str);
 
+bool isDataApp(const char *str);
+
 #endif //BREVENT_PATH_H

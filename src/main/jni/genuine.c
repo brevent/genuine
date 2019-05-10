@@ -488,7 +488,7 @@ static inline int checkMaps(const char *packageName, const char *packagePath) {
                 }
 #endif
             }
-        } else if (isThirdParty(path)) {
+        } else if (isDataApp(path)) {
             if (type == TYPE_DEX) {
 #ifndef NO_CHECK_XPOSED
                 if (xposed) {
