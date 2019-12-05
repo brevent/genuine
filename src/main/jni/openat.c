@@ -21,7 +21,7 @@ intptr_t openAt(intptr_t fd, const char *path, intptr_t flag) {
 
     "mov ip, r7\n\t"
     ".cfi_register r7, ip\n\t"
-    "mov r7, #" STR(__NR_openat) "\n\t"
+    "ldr r7, =" STR(__NR_openat) "\n\t"
     "svc #0\n\t"
     "mov r7, ip\n\t"
     ".cfi_restore r7\n\t"
@@ -41,7 +41,7 @@ intptr_t openAt(intptr_t fd, const char *path, intptr_t flag) {
     "mov x2, %3\n\t"
 #endif
 
-    "mov x8, #" STR(__NR_openat) "\n\t"
+    "mov x8, " STR(__NR_openat) "\n\t"
     "svc #0\n\t"
 
 #ifndef OPTIMIZE_ASM
