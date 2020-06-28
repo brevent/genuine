@@ -123,102 +123,181 @@ static inline void fill_java_util_Map(char v[]) {
     v[0xd] = '\0';
 }
 
-static inline void fill_values(char v[]) {
-    // values
+static inline void fill_put(char v[]) {
+    // put
     static unsigned int m = 0;
 
     if (m == 0) {
+        m = 2;
+    } else if (m == 3) {
         m = 5;
-    } else if (m == 7) {
-        m = 11;
     }
 
-    v[0x0] = 'w';
-    v[0x1] = 'c';
-    v[0x2] = 'o';
-    v[0x3] = 'q';
-    v[0x4] = 'e';
-    v[0x5] = 'r';
-    for (unsigned int i = 0; i < 0x6; ++i) {
-        v[i] ^= ((i + 0x6) % m);
-    }
-    v[0x6] = '\0';
-}
-
-static inline void fill_values_signature(char v[]) {
-    // ()Ljava/util/Collection;
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 23;
-    } else if (m == 29) {
-        m = 31;
-    }
-
-    v[0x0] = ')';
-    v[0x1] = '+';
-    v[0x2] = 'O';
-    v[0x3] = 'n';
-    v[0x4] = 'd';
-    v[0x5] = 'p';
-    v[0x6] = 'f';
-    v[0x7] = '\'';
-    v[0x8] = '|';
-    v[0x9] = '~';
-    v[0xa] = 'b';
-    v[0xb] = '`';
-    v[0xc] = '"';
-    v[0xd] = 'M';
-    v[0xe] = '`';
-    v[0xf] = '|';
-    v[0x10] = '}';
-    v[0x11] = 'w';
-    v[0x12] = 'p';
-    v[0x13] = '`';
-    v[0x14] = '|';
-    v[0x15] = 'y';
-    v[0x16] = 'n';
-    v[0x17] = ':';
-    for (unsigned int i = 0; i < 0x18; ++i) {
-        v[i] ^= ((i + 0x18) % m);
-    }
-    v[0x18] = '\0';
-}
-
-static inline void fill_java_util_Collection(char v[]) {
-    // java/util/Collection
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 19;
-    } else if (m == 23) {
-        m = 29;
-    }
-
-    v[0x0] = 'k';
-    v[0x1] = 'c';
+    v[0x0] = 'q';
+    v[0x1] = 'u';
     v[0x2] = 'u';
-    v[0x3] = 'e';
-    v[0x4] = '*';
-    v[0x5] = 's';
-    v[0x6] = 's';
-    v[0x7] = 'a';
-    v[0x8] = 'e';
-    v[0x9] = '%';
-    v[0xa] = 'H';
-    v[0xb] = 'c';
-    v[0xc] = 'a';
-    v[0xd] = 'b';
-    v[0xe] = 'j';
-    v[0xf] = 's';
-    v[0x10] = 'e';
-    v[0x11] = '{';
-    v[0x12] = 'o';
-    v[0x13] = 'o';
-    for (unsigned int i = 0; i < 0x14; ++i) {
-        v[i] ^= ((i + 0x14) % m);
+    for (unsigned int i = 0; i < 0x3; ++i) {
+        v[i] ^= ((i + 0x3) % m);
     }
-    v[0x14] = '\0';
+    v[0x3] = '\0';
+}
+
+static inline void fill_put_signature(char v[]) {
+    // (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 53;
+    } else if (m == 59) {
+        m = 61;
+    }
+
+    v[0x0] = '+';
+    v[0x1] = 'H';
+    v[0x2] = 'o';
+    v[0x3] = 'g';
+    v[0x4] = 'q';
+    v[0x5] = 'i';
+    v[0x6] = '&';
+    v[0x7] = 'f';
+    v[0x8] = 'j';
+    v[0x9] = 'b';
+    v[0xa] = 'j';
+    v[0xb] = '!';
+    v[0xc] = '@';
+    v[0xd] = 'r';
+    v[0xe] = '{';
+    v[0xf] = 'w';
+    v[0x10] = 'p';
+    v[0x11] = '`';
+    v[0x12] = '.';
+    v[0x13] = 'Z';
+    v[0x14] = '}';
+    v[0x15] = 'y';
+    v[0x16] = 'o';
+    v[0x17] = '{';
+    v[0x18] = '4';
+    v[0x19] = 'p';
+    v[0x1a] = '|';
+    v[0x1b] = 'p';
+    v[0x1c] = 'x';
+    v[0x1d] = '\x0f';
+    v[0x1e] = 'n';
+    v[0x1f] = '@';
+    v[0x20] = 'I';
+    v[0x21] = 'A';
+    v[0x22] = 'F';
+    v[0x23] = 'R';
+    v[0x24] = '\x1c';
+    v[0x25] = '\x01';
+    v[0x26] = 'e';
+    v[0x27] = '@';
+    v[0x28] = 'J';
+    v[0x29] = 'Z';
+    v[0x2a] = 'L';
+    v[0x2b] = '\x01';
+    v[0x2c] = 'C';
+    v[0x2d] = 'Q';
+    v[0x2e] = '_';
+    v[0x2f] = 'U';
+    v[0x30] = '\x1c';
+    v[0x31] = '{';
+    v[0x32] = 'b';
+    v[0x33] = 'k';
+    v[0x34] = 'g';
+    v[0x35] = '`';
+    v[0x36] = 'p';
+    v[0x37] = '>';
+    for (unsigned int i = 0; i < 0x38; ++i) {
+        v[i] ^= ((i + 0x38) % m);
+    }
+    v[0x38] = '\0';
+}
+
+static inline void fill_entrySet(char v[]) {
+    // entrySet
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 7;
+    } else if (m == 11) {
+        m = 13;
+    }
+
+    v[0x0] = 'd';
+    v[0x1] = 'l';
+    v[0x2] = 'w';
+    v[0x3] = 'v';
+    v[0x4] = '|';
+    v[0x5] = 'U';
+    v[0x6] = 'e';
+    v[0x7] = 'u';
+    for (unsigned int i = 0; i < 0x8; ++i) {
+        v[i] ^= ((i + 0x8) % m);
+    }
+    v[0x8] = '\0';
+}
+
+static inline void fill_entrySet_signature(char v[]) {
+    // ()Ljava/util/Set;
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 13;
+    } else if (m == 17) {
+        m = 19;
+    }
+
+    v[0x0] = ',';
+    v[0x1] = ',';
+    v[0x2] = 'J';
+    v[0x3] = 'm';
+    v[0x4] = 'i';
+    v[0x5] = '\x7f';
+    v[0x6] = 'k';
+    v[0x7] = '$';
+    v[0x8] = 'y';
+    v[0x9] = 't';
+    v[0xa] = 'h';
+    v[0xb] = 'n';
+    v[0xc] = ',';
+    v[0xd] = 'W';
+    v[0xe] = '`';
+    v[0xf] = 'r';
+    v[0x10] = '<';
+    for (unsigned int i = 0; i < 0x11; ++i) {
+        v[i] ^= ((i + 0x11) % m);
+    }
+    v[0x11] = '\0';
+}
+
+static inline void fill_java_util_Set(char v[]) {
+    // java/util/Set
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 11;
+    } else if (m == 13) {
+        m = 17;
+    }
+
+    v[0x0] = 'h';
+    v[0x1] = 'b';
+    v[0x2] = 'r';
+    v[0x3] = 'd';
+    v[0x4] = ')';
+    v[0x5] = 'r';
+    v[0x6] = '|';
+    v[0x7] = '`';
+    v[0x8] = 'f';
+    v[0x9] = '/';
+    v[0xa] = 'R';
+    v[0xb] = 'g';
+    v[0xc] = 'w';
+    for (unsigned int i = 0; i < 0xd; ++i) {
+        v[i] ^= ((i + 0xd) % m);
+    }
+    v[0xd] = '\0';
 }
 
 static inline void fill_iterator(char v[]) {
@@ -379,7 +458,7 @@ static inline void fill_next(char v[]) {
     v[0x4] = '\0';
 }
 
-static inline void fill_next_signature(char v[]) {
+static inline void fill_object_signature(char v[]) {
     // ()Ljava/lang/Object;
     static unsigned int m = 0;
 
@@ -415,28 +494,75 @@ static inline void fill_next_signature(char v[]) {
     v[0x14] = '\0';
 }
 
-static inline void fill_clear(char v[]) {
-    // clear
+static inline void fill_getKey(char v[]) {
+    // getKey
     static unsigned int m = 0;
 
     if (m == 0) {
-        m = 3;
-    } else if (m == 5) {
-        m = 7;
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
     }
 
-    v[0x0] = 'a';
-    v[0x1] = 'l';
-    v[0x2] = 'd';
-    v[0x3] = 'c';
-    v[0x4] = 'r';
-    for (unsigned int i = 0; i < 0x5; ++i) {
-        v[i] ^= ((i + 0x5) % m);
+    v[0x0] = 'f';
+    v[0x1] = 'g';
+    v[0x2] = 'w';
+    v[0x3] = 'O';
+    v[0x4] = 'e';
+    v[0x5] = 'x';
+    for (unsigned int i = 0; i < 0x6; ++i) {
+        v[i] ^= ((i + 0x6) % m);
     }
-    v[0x5] = '\0';
+    v[0x6] = '\0';
 }
 
-static inline void fill_clear_signature(char v[]) {
+static inline void fill_getValue(char v[]) {
+    // getValue
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 7;
+    } else if (m == 11) {
+        m = 13;
+    }
+
+    v[0x0] = 'f';
+    v[0x1] = 'g';
+    v[0x2] = 'w';
+    v[0x3] = 'R';
+    v[0x4] = 'd';
+    v[0x5] = 'j';
+    v[0x6] = 'u';
+    v[0x7] = 'd';
+    for (unsigned int i = 0; i < 0x8; ++i) {
+        v[i] ^= ((i + 0x8) % m);
+    }
+    v[0x8] = '\0';
+}
+
+static inline void fill_init(char v[]) {
+    // <init>
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
+    }
+
+    v[0x0] = '=';
+    v[0x1] = 'k';
+    v[0x2] = 'm';
+    v[0x3] = 'm';
+    v[0x4] = 't';
+    v[0x5] = '?';
+    for (unsigned int i = 0; i < 0x6; ++i) {
+        v[i] ^= ((i + 0x6) % m);
+    }
+    v[0x6] = '\0';
+}
+
+static inline void fill_void_signature(char v[]) {
     // ()V
     static unsigned int m = 0;
 
@@ -456,7 +582,7 @@ static inline void fill_clear_signature(char v[]) {
 }
 
 static inline bool doAntiEpic(JNIEnv *env, jclass classDexposedBridge) {
-    char v1[0x20], v2[0x20];
+    char v1[0x20], v2[0x40];
     bool antied = false;
 
     fill_hookedMethodCallbacks(v1); // 0x16
@@ -474,17 +600,20 @@ static inline bool doAntiEpic(JNIEnv *env, jclass classDexposedBridge) {
     if (map == NULL || !(*env)->IsInstanceOf(env, map, classMap)) {
         return false;
     }
-    fill_values(v1); // 0x7
-    fill_values_signature(v2); // 0x19
+    fill_put(v1); // 0x4
+    fill_put_signature(v2); // 0x39
+    jmethodID put = (*env)->GetMethodID(env, classMap, v1, v2);
+    fill_entrySet(v1); // 0x9
+    fill_entrySet_signature(v2); // 0x12
     jmethodID method = (*env)->GetMethodID(env, classMap, v1, v2);
-    jobject values = (*env)->CallObjectMethod(env, map, method);
+    jobject entrySet = (*env)->CallObjectMethod(env, map, method);
 
-    fill_java_util_Collection(v1); // 0x15
-    jclass classCollection = (*env)->FindClass(env, v1);
+    fill_java_util_Set(v1); // 0xe
+    jclass classSet = (*env)->FindClass(env, v1);
     fill_iterator(v1); // 0x9
     fill_iterator_signature(v2); // 0x17
-    method = (*env)->GetMethodID(env, classCollection, v1, v2);
-    jobject iterator = (*env)->CallObjectMethod(env, values, method);
+    method = (*env)->GetMethodID(env, classSet, v1, v2);
+    jobject iterator = (*env)->CallObjectMethod(env, entrySet, method);
 
     fill_java_util_Iterator(v1); // 0x13
     jclass classIterator = (*env)->FindClass(env, v1);
@@ -492,33 +621,60 @@ static inline bool doAntiEpic(JNIEnv *env, jclass classDexposedBridge) {
     fill_hasNext_signature(v2); // 0x4
     jmethodID hasNext = (*env)->GetMethodID(env, classIterator, v1, v2);
     fill_next(v1); // 0x5
-    fill_next_signature(v2); // 0x15
+    fill_object_signature(v2); // 0x15
     jmethodID next = (*env)->GetMethodID(env, classIterator, v1, v2);
 
-    jmethodID methodClear = NULL;
+    jobject emptyHooks = NULL;
+    jmethodID getKey = NULL;
+    jmethodID getValue = NULL;
     while ((*env)->CallBooleanMethod(env, iterator, hasNext)) {
-        jobject hook = (*env)->CallObjectMethod(env, iterator, next);
-        debug(env, "hook value: %s", hook);
-        if (hook == NULL) {
+        jobject entry = (*env)->CallObjectMethod(env, iterator, next);
+        jclass entryClass = (*env)->GetObjectClass(env, entry);
+        if (getKey == NULL) {
+            fill_getKey(v1); // 0x7
+            fill_object_signature(v2); // 0x15
+            getKey = (*env)->GetMethodID(env, entryClass, v1, v2);
+        }
+        if (getValue == NULL) {
+            fill_getValue(v1); // 0x9
+            fill_object_signature(v2); // 0x15
+            getValue = (*env)->GetMethodID(env, entryClass, v1, v2);
+        }
+
+        jobject member = (*env)->CallObjectMethod(env, entry, getKey);
+        debug(env, "hook member: %s", member);
+        if (member == NULL) {
             continue;
         }
-        if (methodClear == NULL) {
-            jobject hookClass = (*env)->GetObjectClass(env, hook);
-            debug(env, "hook value class: %s", hookClass);
-            fill_clear(v1); // 0x5
-            fill_clear_signature(v2); // 0x4
-            methodClear = (*env)->GetMethodID(env, (jclass) hookClass, v1, v2);
-            if (methodClear == NULL) {
+        jobject hooks = (*env)->CallObjectMethod(env, entry, getValue);
+        debug(env, "hooks value: %s", hooks);
+        if (hooks == NULL) {
+            continue;
+        }
+
+        if (emptyHooks == NULL) {
+            jclass hookClass = (*env)->GetObjectClass(env, hooks);
+            debug(env, "hooks value class: %s", hookClass);
+            fill_init(v1); // 0x7
+            fill_void_signature(v2); // 0x4
+            jmethodID init = (*env)->GetMethodID(env, hookClass, v1, v2);
+            if (init == NULL) {
                 (*env)->ExceptionClear(env);
-            }
-            (*env)->DeleteLocalRef(env, hookClass);
-            if (methodClear == NULL) {
-                (*env)->DeleteLocalRef(env, hook);
+                (*env)->DeleteLocalRef(env, hookClass);
+                (*env)->DeleteLocalRef(env, entry);
+                (*env)->DeleteLocalRef(env, entryClass);
+                (*env)->DeleteLocalRef(env, hooks);
+                (*env)->DeleteLocalRef(env, member);
                 break;
             }
+            emptyHooks = (*env)->NewObject(env, hookClass, init);
+            (*env)->DeleteLocalRef(env, hookClass);
         }
-        (*env)->CallObjectMethod(env, hook, methodClear);
-        (*env)->DeleteLocalRef(env, hook);
+        (*env)->CallObjectMethod(env, map, put, member, emptyHooks);
+        (*env)->DeleteLocalRef(env, entry);
+        (*env)->DeleteLocalRef(env, entryClass);
+        (*env)->DeleteLocalRef(env, member);
+        (*env)->DeleteLocalRef(env, hooks);
         if (!antied) {
             antied = true;
         }
@@ -526,8 +682,8 @@ static inline bool doAntiEpic(JNIEnv *env, jclass classDexposedBridge) {
 
     (*env)->DeleteLocalRef(env, classIterator);
     (*env)->DeleteLocalRef(env, iterator);
-    (*env)->DeleteLocalRef(env, classCollection);
-    (*env)->DeleteLocalRef(env, values);
+    (*env)->DeleteLocalRef(env, classSet);
+    (*env)->DeleteLocalRef(env, entrySet);
     (*env)->DeleteLocalRef(env, classMap);
     (*env)->DeleteLocalRef(env, map);
 
@@ -680,57 +836,26 @@ static inline void fill_findLoadedClass_signature(char v[]) {
     v[0x3c] = '\0';
 }
 
-static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
-    // de.robv.android.xposed.DexposedBridge
+static inline void fill_DexposedBridge(char v[]) {
+    // me.anr
     static unsigned int m = 0;
 
     if (m == 0) {
-        m = 31;
-    } else if (m == 37) {
-        m = 41;
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
     }
 
-    v[0x0] = 'b';
-    v[0x1] = 'b';
-    v[0x2] = '&';
-    v[0x3] = '{';
-    v[0x4] = 'e';
-    v[0x5] = 'i';
-    v[0x6] = 'z';
-    v[0x7] = '#';
-    v[0x8] = 'o';
-    v[0x9] = 'a';
-    v[0xa] = 't';
-    v[0xb] = 'c';
-    v[0xc] = '}';
-    v[0xd] = 'z';
-    v[0xe] = 'p';
-    v[0xf] = ';';
-    v[0x10] = 'n';
-    v[0x11] = 'g';
-    v[0x12] = 'w';
-    v[0x13] = 'j';
-    v[0x14] = '\x7f';
-    v[0x15] = '\x7f';
-    v[0x16] = '2';
-    v[0x17] = 'Y';
-    v[0x18] = '{';
-    v[0x19] = 'x';
-    v[0x1a] = 'q';
-    v[0x1b] = 'm';
-    v[0x1c] = 'p';
-    v[0x1d] = 'a';
-    v[0x1e] = 'a';
-    v[0x1f] = 'D';
-    v[0x20] = 'u';
-    v[0x21] = 'a';
-    v[0x22] = 'm';
-    v[0x23] = 'm';
-    v[0x24] = 'n';
-    for (unsigned int i = 0; i < 0x25; ++i) {
-        v[i] ^= ((i + 0x25) % m);
+    v[0x0] = 'l';
+    v[0x1] = 'g';
+    v[0x2] = '-';
+    v[0x3] = 'e';
+    v[0x4] = 'n';
+    v[0x5] = 's';
+    for (unsigned int i = 0; i < 0x6; ++i) {
+        v[i] ^= ((i + 0x6) % m);
     }
-    v[0x25] = '\0';
+    v[0x6] = '\0';
 }
 
 static inline void fill_exp824(char v[]) {
@@ -784,7 +909,7 @@ bool antiEpic(JNIEnv *env, int sdk) {
         (*env)->ExceptionClear(env);
         goto cleanVmClassLoader;
     }
-    fill_de_robv_android_xposed_DexposedBridge(v2); // 0x26
+    fill_DexposedBridge(v2); // 0x7
     jstring stringDexposedBridge = (*env)->NewStringUTF(env, v2);
     jobject classDexposedBridge = (*env)->CallStaticObjectMethod(env,
                                                                  vmClassLoader,
