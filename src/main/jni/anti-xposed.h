@@ -9,7 +9,7 @@ extern "C" {
 
 jboolean antiXposed(JNIEnv *env, jclass clazz, int sdk, bool *xposed);
 
-bool antiEdXposed(JNIEnv *env);
+bool doAntiEdXposed(JNIEnv *env, jobject classLoader);
 
 #ifdef __cplusplus
 }

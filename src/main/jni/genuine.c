@@ -22,6 +22,7 @@
 #include "common.h"
 #include "openat.h"
 #include "path.h"
+#include "classloader.h"
 
 #ifdef CHECK_MOUNT
 #include "mount.h"
@@ -460,12 +461,8 @@ static inline int checkMaps(const char *packageName, const char *packagePath) {
         } else {
             type = TYPE_NON;
         }
-#ifdef DEBUG
+#ifdef DEBUG_MAPS
         LOGI("type: %d, line: %s", type, line);
-#elif defined(DEBUG_MAPS)
-        if (type != TYPE_NON) {
-            LOGI(line);
-        }
 #endif
         if (strstr(path, packageName) != NULL && access(path, F_OK) == 0) {
             if (type == TYPE_APK) {
@@ -1150,8 +1147,10 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         if (sign) {
             fill_invalid_signature_path_s(v1);
             LOGE(v1, packagePath);
+#ifndef DEBUG_FAKE
             genuine = sign < 0 ? CHECK_NOAPK : CHECK_FAKE;
             goto clean;
+#endif
         }
     }
 
@@ -1167,18 +1166,8 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         antiXposed(env, clazz, sdk, &xposed);
 #endif
 
-#ifndef NO_CHECK_XPOSED_EDXPOSED
-#ifdef DEBUG
-        LOGI("antiEdXposed start");
-#endif
-        antiEdXposed(env);
-#endif
-
-#ifdef CHECK_XPOSED_EPIC
-#ifdef DEBUG
-        LOGI("antiEpic start");
-#endif
-        antiEpic(env, sdk);
+#if !defined(NO_CHECK_XPOSED_EDXPOSED) || defined(CHECK_XPOSED_EPIC)
+        checkClassLoader(env, sdk);
 #endif
     }
 

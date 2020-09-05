@@ -101,7 +101,7 @@ find_symbol(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, const char *symbol)
                 && is_global(sym)
                 && strcmp(dynstr + sym->st_name, symbol) == 0) {
                 ElfW(Addr) *symbol_sym = (ElfW(Addr) *) (info->dlpi_addr + sym->st_value);
-#ifdef DEBUG
+#ifdef DEBUG_PLT
                 LOGI("found %s(gnu+%u) in %s, %p", symbol, n, info->dlpi_name, symbol_sym);
 #endif
                 return symbol_sym;
@@ -124,7 +124,7 @@ find_symbol(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, const char *symbol)
             if (is_global(sym) &&
                 strcmp(dynstr + sym->st_name, symbol) == 0) {
                 ElfW(Addr) *symbol_sym = (ElfW(Addr) *) (info->dlpi_addr + sym->st_value);
-#ifdef DEBUG
+#ifdef DEBUG_PLT
                 LOGI("found %s(elf+%u) in %s, %p", symbol, n, info->dlpi_name, symbol_sym);
 #endif
                 return symbol_sym;
@@ -194,7 +194,7 @@ static ElfW(Addr) *find_plt(struct dl_phdr_info *info, ElfW(Dyn) *base_addr, con
         idx = dynsym[idx].st_name;
         if (strcmp(dynstr + idx, symbol) == 0) {
             ElfW(Addr) *symbol_plt = (ElfW(Addr) *) (info->dlpi_addr + plt->r_offset);
-#ifdef DEBUG
+#ifdef DEBUG_PLT
             ElfW(Addr) *symbol_plt_value = (ElfW(Addr) *) *symbol_plt;
             LOGI("found %s(plt+%zu) in %s, %p -> %p", symbol, i, info->dlpi_name, symbol_plt,
                  symbol_plt_value);
@@ -230,7 +230,7 @@ static inline bool should_check_plt(Symbol *symbol, struct dl_phdr_info *info) {
 
 static int callback(struct dl_phdr_info *info, __unused size_t size, void *data) {
     if (!isso(info->dlpi_name)) {
-#ifdef DEBUG
+#ifdef DEBUG_PLT
         LOGW("ignore non-so: %s", info->dlpi_name);
 #endif
         return 0;
@@ -253,7 +253,7 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                 ElfW(Addr) *addr_value = (ElfW(Addr) *) *addr;
                 ElfW(Addr) *symbol_plt_value = (ElfW(Addr) *) *symbol->symbol_plt;
                 if (addr_value != symbol_plt_value) {
-#ifdef DEBUG
+#ifdef DEBUG_PLT
                     LOGW("%s, plt %p -> %p != %p", symbol->symbol_name, addr, addr_value,
                          symbol_plt_value);
 #endif
@@ -269,7 +269,7 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
                     ++symbol->size;
                     symbol->names = realloc(symbol->names, symbol->size * sizeof(char *));
                 }
-#ifdef DEBUG
+#ifdef DEBUG_PLT
                 LOGI("[%d]: %s", symbol->size - 1, info->dlpi_name);
 #endif
                 symbol->names[symbol->size - 1] = strdup(info->dlpi_name);
@@ -286,7 +286,7 @@ static int callback(struct dl_phdr_info *info, __unused size_t size, void *data)
             ElfW(Addr) *symbol_plt_value = (ElfW(Addr) *) *symbol->symbol_plt;
             // stop if unmatch
             if (symbol_plt_value != symbol->symbol_sym) {
-#ifdef DEBUG
+#ifdef DEBUG_PLT
                 LOGW("%s, plt: %p -> %p != %p", symbol->symbol_name, symbol->symbol_plt,
                      symbol_plt_value, symbol->symbol_sym);
 #endif

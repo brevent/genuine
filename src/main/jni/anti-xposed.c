@@ -1122,61 +1122,28 @@ static inline void fill_disableHooks_signature(char v[]) {
     v[0x1] = '\0';
 }
 
-
-static inline void fill_gInjectDexClassLoader(char v[]) {
-    // gInjectDexClassLoader
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 19;
-    } else if (m == 23) {
-        m = 29;
-    }
-
-    v[0x0] = 'e';
-    v[0x1] = 'J';
-    v[0x2] = 'j';
-    v[0x3] = 'o';
-    v[0x4] = 'c';
-    v[0x5] = 'd';
-    v[0x6] = '|';
-    v[0x7] = 'M';
-    v[0x8] = 'o';
-    v[0x9] = 's';
-    v[0xa] = 'O';
-    v[0xb] = 'a';
-    v[0xc] = 'o';
-    v[0xd] = '|';
-    v[0xe] = 'c';
-    v[0xf] = ']';
-    v[0x10] = '}';
-    v[0x11] = 'a';
-    v[0x12] = 'e';
-    v[0x13] = 'g';
-    v[0x14] = 'q';
-    for (unsigned int i = 0; i < 0x15; ++i) {
-        v[i] ^= ((i + 0x15) % m);
-    }
-    v[0x15] = '\0';
-
-}
-
-static inline bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
+bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
     char v1[0x80], v2[0x80];
     bool antied = false;
 
+    debug(env, "doAntiEdXposed, classLoader: %s", classLoader);
+
     fill_java_lang_VMClassLoader(v1);
     jclass vmClassLoader = (*env)->FindClass(env, v1);
-    if (vmClassLoader == NULL) {
+    if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+    }
+    if (vmClassLoader == NULL) {
         goto clean;
     }
 
     fill_findLoadedClass(v1);
     fill_findLoadedClass_signature(v2);
     jmethodID findLoadedClass = (*env)->GetStaticMethodID(env, vmClassLoader, v1, v2);
-    if (findLoadedClass == NULL) {
+    if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
+    }
+    if (findLoadedClass == NULL) {
         goto cleanVmClassLoader;
     }
 
@@ -1189,16 +1156,20 @@ static inline bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
                                                                        stringXposedBridge);
 
     if ((*env)->ExceptionCheck(env)) {
-#ifdef DEBUG
-        (*env)->ExceptionDescribe(env);
-#endif
         (*env)->ExceptionClear(env);
     }
+
+#ifdef DEBUG
+    debug(env, "XposedBridge: %s", classXposedBridge);
+#endif
 
     if (classXposedBridge != NULL) {
         fill_disableHooks(v1);
         fill_disableHooks_signature(v2);
         jfieldID field = (*env)->GetStaticFieldID(env, classXposedBridge, v1, v2);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
         if (field != NULL) {
 #ifdef DEBUG
             jboolean old = (*env)->GetStaticBooleanField(env, classXposedBridge, field);
@@ -1213,8 +1184,6 @@ static inline bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
             }
 #endif
             antied = true;
-        } else {
-            (*env)->ExceptionClear(env);
         }
         (*env)->DeleteLocalRef(env, classXposedBridge);
     }
@@ -1223,21 +1192,5 @@ static inline bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
 cleanVmClassLoader:
     (*env)->DeleteLocalRef(env, vmClassLoader);
 clean:
-    return antied;
-}
-
-bool antiEdXposed(JNIEnv *env) {
-    bool antied = false;
-    void *handle = dlopen(NULL, RTLD_NOW);
-    char v1[0x16];
-    fill_gInjectDexClassLoader(v1);
-    void *inject = dlsym(handle, v1);
-    if (inject != NULL) {
-#ifdef DEBUG
-        LOGI("found EdXposed");
-#endif
-        antied = doAntiEdXposed(env, *((jobject *) inject));
-    }
-    dlclose(handle);
     return antied;
 }

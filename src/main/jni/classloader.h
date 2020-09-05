@@ -3,12 +3,13 @@
 //
 
 #include <jni.h>
+#include "common.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-jobject findClassLoader(JNIEnv *env, const char *name, int sdk);
+void checkClassLoader(JNIEnv *env, int sdk);
 
 #ifdef __cplusplus
 }

@@ -7,28 +7,6 @@
 #include "common.h"
 #include "pm.h"
 
-#ifdef DEBUG
-
-static inline void debug(JNIEnv *env, const char *prefix, jobject object) {
-    jclass classObject = (*env)->FindClass(env, "java/lang/Object");
-    jmethodID objectToString = (*env)->GetMethodID(env, classObject, "toString",
-                                                   "()Ljava/lang/String;");
-    if (object == NULL) {
-        LOGI(prefix, NULL);
-    } else {
-        jstring string = (jstring) (*env)->CallObjectMethod(env, object, objectToString);
-        const char *value = (*env)->GetStringUTFChars(env, string, NULL);
-        LOGI(prefix, value);
-        (*env)->ReleaseStringUTFChars(env, string, value);
-        (*env)->DeleteLocalRef(env, string);
-    }
-    (*env)->DeleteLocalRef(env, classObject);
-}
-
-#else
-#define debug(x, y, z) do {} while(0);
-#endif
-
 static inline void fill_android_os_ServiceManager(char v[]) {
     // android/os/ServiceManager
     static unsigned int m = 0;

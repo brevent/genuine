@@ -34,9 +34,17 @@ enum {
 #define TAG "Genuine"
 #endif
 
+#ifndef LOGI
 #define LOGI(...) (genuine_log_print(ANDROID_LOG_INFO, __VA_ARGS__))
+#endif
+
+#ifndef LOGW
 #define LOGW(...) (genuine_log_print(ANDROID_LOG_WARN, __VA_ARGS__))
+#endif
+
+#ifndef LOGE
 #define LOGE(...) (genuine_log_print(ANDROID_LOG_ERROR, __VA_ARGS__))
+#endif
 
 void genuine_log_print(int prio, const char *fmt, ...);
 
@@ -51,6 +59,18 @@ int getGenuine();
 int getSdk();
 
 bool has_native_libs();
+
+#ifdef DEBUG
+
+void debug(JNIEnv *env, const char *format, jobject object);
+
+#else
+#define debug(...) do {} while(0);
+#endif
+
+jobject newLocalRef(JNIEnv *env, void *object);
+
+void DeleteLocalRef(JNIEnv *env, jobject object);
 
 #ifdef __cplusplus
 }

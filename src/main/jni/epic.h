@@ -11,7 +11,7 @@ extern "C" {
 
 #ifdef CHECK_XPOSED_EPIC
 
-bool antiEpic(JNIEnv *env, int sdk);
+bool doAntiEpic(JNIEnv *env, jobject classLoader);
 
 #endif
 
