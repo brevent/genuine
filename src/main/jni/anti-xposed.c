@@ -18,7 +18,8 @@
 
 #define likely(x) __builtin_expect(!!(x), 1)
 
-static jmethodID original;
+static jclass originalXposedClass;
+static jmethodID originalXposedMethod;
 
 static inline void fill_invoke(char v[]) {
     // invoke
@@ -320,7 +321,7 @@ static inline void fill_getCause_signature(char v[]) {
 static jobject
 invoke(JNIEnv *env, jclass clazz __unused, jobject m, jint i, jobject object __unused, jobject t,
        jobjectArray as) {
-    jobject result = (*env)->CallStaticObjectMethod(env, NULL, original, m, i, NULL, NULL, t, as);
+    jobject result = (*env)->CallStaticObjectMethod(env, originalXposedClass, originalXposedMethod, m, i, NULL, NULL, t, as);
     if ((*env)->ExceptionCheck(env)) {
         char v1[0x2c];
         jthrowable throwable = (*env)->ExceptionOccurred(env);
@@ -345,6 +346,127 @@ invoke(JNIEnv *env, jclass clazz __unused, jobject m, jint i, jobject object __u
         (*env)->DeleteLocalRef(env, throwable);
     }
     return result;
+}
+
+static inline void fill__ZN3art6mirror9ArtMethod21xposed_callback_classE(char v[]) {
+    // _ZN3art6mirror9ArtMethod21xposed_callback_classE
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 47;
+    } else if (m == 53) {
+        m = 59;
+    }
+
+    v[0x0] = '^';
+    v[0x1] = 'X';
+    v[0x2] = 'M';
+    v[0x3] = '7';
+    v[0x4] = 'd';
+    v[0x5] = 't';
+    v[0x6] = 's';
+    v[0x7] = '>';
+    v[0x8] = 'd';
+    v[0x9] = 'c';
+    v[0xa] = 'y';
+    v[0xb] = '~';
+    v[0xc] = 'b';
+    v[0xd] = '|';
+    v[0xe] = '6';
+    v[0xf] = 'Q';
+    v[0x10] = 'c';
+    v[0x11] = 'f';
+    v[0x12] = '^';
+    v[0x13] = 'q';
+    v[0x14] = 'a';
+    v[0x15] = '~';
+    v[0x16] = 'x';
+    v[0x17] = '|';
+    v[0x18] = '+';
+    v[0x19] = '+';
+    v[0x1a] = 'c';
+    v[0x1b] = 'l';
+    v[0x1c] = 'r';
+    v[0x1d] = 'm';
+    v[0x1e] = 'z';
+    v[0x1f] = 'D';
+    v[0x20] = '~';
+    v[0x21] = 'A';
+    v[0x22] = 'B';
+    v[0x23] = 'H';
+    v[0x24] = 'I';
+    v[0x25] = 'D';
+    v[0x26] = 'F';
+    v[0x27] = 'K';
+    v[0x28] = 'B';
+    v[0x29] = 'u';
+    v[0x2a] = 'H';
+    v[0x2b] = '@';
+    v[0x2c] = 'L';
+    v[0x2d] = ']';
+    v[0x2e] = 's';
+    v[0x2f] = 'D';
+    for (unsigned int i = 0; i < 0x30; ++i) {
+        v[i] ^= ((i + 0x30) % m);
+    }
+    v[0x30] = '\0';
+}
+
+static inline void fill__ZN3art9ArtMethod21xposed_callback_classE(char v[]) {
+    // _ZN3art9ArtMethod21xposed_callback_classE
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 37;
+    } else if (m == 41) {
+        m = 43;
+    }
+
+    v[0x0] = '[';
+    v[0x1] = '_';
+    v[0x2] = 'H';
+    v[0x3] = '4';
+    v[0x4] = 'i';
+    v[0x5] = '{';
+    v[0x6] = '~';
+    v[0x7] = '2';
+    v[0x8] = 'M';
+    v[0x9] = '\x7f';
+    v[0xa] = 'z';
+    v[0xb] = 'B';
+    v[0xc] = 'u';
+    v[0xd] = 'e';
+    v[0xe] = 'z';
+    v[0xf] = '|';
+    v[0x10] = 'p';
+    v[0x11] = '\'';
+    v[0x12] = '\'';
+    v[0x13] = 'o';
+    v[0x14] = 'h';
+    v[0x15] = 'v';
+    v[0x16] = 'i';
+    v[0x17] = '~';
+    v[0x18] = 'x';
+    v[0x19] = 'B';
+    v[0x1a] = '}';
+    v[0x1b] = '~';
+    v[0x1c] = 'L';
+    v[0x1d] = 'M';
+    v[0x1e] = '@';
+    v[0x1f] = 'B';
+    v[0x20] = 'G';
+    v[0x21] = 'k';
+    v[0x22] = '^';
+    v[0x23] = 'a';
+    v[0x24] = 'o';
+    v[0x25] = 'e';
+    v[0x26] = 'v';
+    v[0x27] = 'u';
+    v[0x28] = 'B';
+    for (unsigned int i = 0; i < 0x29; ++i) {
+        v[i] ^= ((i + 0x29) % m);
+    }
+    v[0x29] = '\0';
 }
 
 static inline void fill__ZN3art6mirror9ArtMethod22xposed_callback_methodE(char v[]) {
@@ -468,122 +590,6 @@ static inline void fill__ZN3art9ArtMethod22xposed_callback_methodE(char v[]) {
         v[i] ^= ((i + 0x2a) % m);
     }
     v[0x2a] = '\0';
-}
-
-static inline void fill_java_lang_ClassLoader$SystemClassLoader(char v[]) {
-    // java/lang/ClassLoader$SystemClassLoader
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 37;
-    } else if (m == 41) {
-        m = 43;
-    }
-
-    v[0x0] = 'h';
-    v[0x1] = 'b';
-    v[0x2] = 'r';
-    v[0x3] = 'd';
-    v[0x4] = ')';
-    v[0x5] = 'k';
-    v[0x6] = 'i';
-    v[0x7] = 'g';
-    v[0x8] = 'm';
-    v[0x9] = '$';
-    v[0xa] = 'O';
-    v[0xb] = 'a';
-    v[0xc] = 'o';
-    v[0xd] = '|';
-    v[0xe] = 'c';
-    v[0xf] = ']';
-    v[0x10] = '}';
-    v[0x11] = 'r';
-    v[0x12] = 'p';
-    v[0x13] = 'p';
-    v[0x14] = 'd';
-    v[0x15] = '3';
-    v[0x16] = 'K';
-    v[0x17] = '`';
-    v[0x18] = 'i';
-    v[0x19] = 'o';
-    v[0x1a] = 'y';
-    v[0x1b] = 'p';
-    v[0x1c] = ']';
-    v[0x1d] = 's';
-    v[0x1e] = 'A';
-    v[0x1f] = 'R';
-    v[0x20] = 'Q';
-    v[0x21] = 'o';
-    v[0x22] = 'K';
-    v[0x23] = 'a';
-    v[0x24] = 'e';
-    v[0x25] = 'g';
-    v[0x26] = 'q';
-    for (unsigned int i = 0; i < 0x27; ++i) {
-        v[i] ^= ((i + 0x27) % m);
-    }
-    v[0x27] = '\0';
-}
-
-static inline void fill_loader(char v[]) {
-    // loader
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 5;
-    } else if (m == 7) {
-        m = 11;
-    }
-
-    v[0x0] = 'm';
-    v[0x1] = 'm';
-    v[0x2] = 'b';
-    v[0x3] = '`';
-    v[0x4] = 'e';
-    v[0x5] = 's';
-    for (unsigned int i = 0; i < 0x6; ++i) {
-        v[i] ^= ((i + 0x6) % m);
-    }
-    v[0x6] = '\0';
-}
-
-static inline void fill_loader_signature(char v[]) {
-    // Ljava/lang/ClassLoader;
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 19;
-    } else if (m == 23) {
-        m = 29;
-    }
-
-    v[0x0] = 'H';
-    v[0x1] = 'o';
-    v[0x2] = 'g';
-    v[0x3] = 'q';
-    v[0x4] = 'i';
-    v[0x5] = '&';
-    v[0x6] = 'f';
-    v[0x7] = 'j';
-    v[0x8] = 'b';
-    v[0x9] = 'j';
-    v[0xa] = '!';
-    v[0xb] = 'L';
-    v[0xc] = '|';
-    v[0xd] = 'p';
-    v[0xe] = 'a';
-    v[0xf] = 's';
-    v[0x10] = 'M';
-    v[0x11] = 'm';
-    v[0x12] = 'b';
-    v[0x13] = '`';
-    v[0x14] = '`';
-    v[0x15] = 't';
-    v[0x16] = '<';
-    for (unsigned int i = 0; i < 0x17; ++i) {
-        v[i] ^= ((i + 0x17) % m);
-    }
-    v[0x17] = '\0';
 }
 
 static inline void fill_java_lang_VMClassLoader(char v[]) {
@@ -1015,82 +1021,30 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, int sdk, bool *xposed) {
     }
 
     if (likely(sdk >= 23)) {
+        fill__ZN3art9ArtMethod21xposed_callback_classE(v2);
         fill__ZN3art9ArtMethod22xposed_callback_methodE(v1);
     } else {
+        fill__ZN3art6mirror9ArtMethod21xposed_callback_classE(v2);
         fill__ZN3art6mirror9ArtMethod22xposed_callback_methodE(v1);
     }
 
+    jclass *xposedCallbackClass = (jclass *) plt_dlsym(v2, NULL);
     jmethodID *xposedCallbackMethod = (jmethodID *) plt_dlsym(v1, NULL);
-    if (xposedCallbackMethod == NULL) {
+#ifdef DEBUG
+    LOGI("xposedCallbackClass: %p, xposedCallbackMethod: %p", xposedCallbackClass, xposedCallbackMethod);
+#endif
+    if (xposedCallbackClass == NULL || xposedCallbackMethod == NULL) {
         return JNI_TRUE;
-    }
-
-#ifdef DEBUG
-    LOGI("found Xposed");
-#endif
-
-    fill_java_lang_ClassLoader$SystemClassLoader(v1);
-    jclass classLoader$SystemClassLoader = (*env)->FindClass(env, v1);
-    if (classLoader$SystemClassLoader == NULL) {
-        (*env)->ExceptionClear(env);
-        goto cleanNop;
-    }
-
-    fill_loader(v1);
-    fill_loader_signature(v2);
-    jfieldID loader = (*env)->GetStaticFieldID(env, classLoader$SystemClassLoader, v1, v2);
-    if (loader == NULL) {
-        (*env)->ExceptionClear(env);
-        goto cleanClassLoader$SystemClassLoader;
-    }
-
-    jobject systemClassLoader = (*env)->GetStaticObjectField(env,
-                                                             classLoader$SystemClassLoader,
-                                                             loader);
-
-    fill_java_lang_VMClassLoader(v1);
-    jclass vmClassLoader = (*env)->FindClass(env, v1);
-    if (vmClassLoader == NULL) {
-        (*env)->ExceptionClear(env);
-        goto cleanSystemClassLoader;
-    }
-
-
-    fill_findLoadedClass(v1);
-    fill_findLoadedClass_signature(v2);
-    jmethodID findLoadedClass = (*env)->GetStaticMethodID(env, vmClassLoader, v1, v2);
-    if (findLoadedClass == NULL) {
-        (*env)->ExceptionClear(env);
-        goto cleanVmClassLoader;
-    }
-
-    fill_de_robv_android_xposed_XposedBridge(v1);
-    jstring stringXposedBridge = (*env)->NewStringUTF(env, v1);
-
-    jclass classXposedBridge = (*env)->CallStaticObjectMethod(env,
-                                                              vmClassLoader,
-                                                              findLoadedClass,
-                                                              systemClassLoader,
-                                                              stringXposedBridge);
-
-    if ((*env)->ExceptionCheck(env)) {
-#ifdef DEBUG
-        (*env)->ExceptionDescribe(env);
-#endif
-        (*env)->ExceptionClear(env);
-    }
-
-    if (classXposedBridge == NULL) {
-        goto cleanStringXposedBridge;
     }
 
     fill_invokeOriginalMethodNative(v1);
     fill_invokeOriginalMethodNative_signature(v2);
-    original = (*env)->GetStaticMethodID(env, classXposedBridge, v1, v2);
-    if (original == NULL) {
+    originalXposedMethod = (*env)->GetStaticMethodID(env, *xposedCallbackClass, v1, v2);
+    if (originalXposedMethod == NULL) {
         (*env)->ExceptionClear(env);
         goto clean;
     }
+    originalXposedClass = *xposedCallbackClass;
 
     fill_invoke(v1);
     fill_invoke_signature(v2);
@@ -1101,33 +1055,24 @@ jboolean antiXposed(JNIEnv *env, jclass clazz, int sdk, bool *xposed) {
     }
 
     fill_handleHookedMethod(v1);
-    jmethodID hooked = (*env)->GetStaticMethodID(env, classXposedBridge, v1, v2);
+    jmethodID hooked = (*env)->GetStaticMethodID(env, *xposedCallbackClass, v1, v2);
     if (hooked == NULL) {
         (*env)->ExceptionClear(env);
         goto clean;
     }
 
 #ifdef DEBUG
-    LOGI("xposed_callback_method: %p", xposedCallbackMethod);
+    LOGI("callback: %p, hooked: %p", *xposedCallbackMethod, hooked);
 #endif
     if (*xposedCallbackMethod == hooked) {
         *xposed = true;
         *xposedCallbackMethod = replace;
+        *xposedCallbackClass = (*env)->NewGlobalRef(env, clazz);
         result = JNI_TRUE;
         goto clean;
     }
 
 clean:
-    (*env)->DeleteLocalRef(env, classXposedBridge);
-cleanStringXposedBridge:
-    (*env)->DeleteLocalRef(env, stringXposedBridge);
-cleanVmClassLoader:
-    (*env)->DeleteLocalRef(env, vmClassLoader);
-cleanSystemClassLoader:
-    (*env)->DeleteLocalRef(env, systemClassLoader);
-cleanClassLoader$SystemClassLoader:
-    (*env)->DeleteLocalRef(env, classLoader$SystemClassLoader);
-cleanNop:
     return result;
 }
 
