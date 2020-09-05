@@ -8,6 +8,7 @@
 #include <elf.h>
 #include <link.h>
 #include <android/log.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

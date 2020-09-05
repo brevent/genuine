@@ -865,6 +865,9 @@ static inline void fill_drawText_signature(char v[]) {
 static void saveBitmap(JNIEnv *env, jobject bitmap) {
     char path[NAME_MAX];
     char *packageName = getGenuinePackageName();
+    if (packageName == NULL) {
+        return;
+    }
     sprintf(path, "/sdcard/Android/data/%s/bitmap.png", packageName);
 #ifdef GENUINE_NAME
     free(packageName);

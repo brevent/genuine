@@ -11,8 +11,6 @@
 
 #if __has_include("genuine.h")
 #include "genuine.h"
-#else
-#error "please define genuine.h"
 #endif
 
 #ifdef __cplusplus
@@ -49,6 +47,10 @@ char *getGenuineClassName();
 bool setGenuine(JNIEnv *env, int genuine);
 
 int getGenuine();
+
+int getSdk();
+
+bool has_native_libs();
 
 #ifdef __cplusplus
 }

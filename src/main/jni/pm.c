@@ -589,6 +589,9 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
     char *path = NULL;
     char v1[0x80], v2[0x80];
 
+    if (packageName == NULL) {
+        return NULL;
+    }
     fill_android_os_ServiceManager(v2); // 0x19 + 1
     jclass classServiceManager = (*env)->FindClass(env, v2);
     if (classServiceManager == NULL) {

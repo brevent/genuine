@@ -327,7 +327,7 @@ bool isPltHooked(const char *name, bool all) {
 int dl_iterate_phdr_symbol(Symbol *symbol) {
     int result;
 #ifdef DEBUG_PLT
-    LOGI("start dl_iterate_phdr: %s", name);
+    LOGI("start dl_iterate_phdr: %s", symbol->symbol_name);
 #endif
 #if __ANDROID_API__ >= 21 || !defined(__arm__)
     result = dl_iterate_phdr(callback, symbol);
@@ -349,7 +349,7 @@ int dl_iterate_phdr_symbol(Symbol *symbol) {
     }
 #endif
 #ifdef DEBUG_PLT
-    LOGI("complete dl_iterate_phdr: %s", name);
+    LOGI("complete dl_iterate_phdr: %s", symbol->symbol_name);
 #endif
     return result;
 }

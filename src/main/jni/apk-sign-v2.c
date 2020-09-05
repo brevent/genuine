@@ -131,6 +131,7 @@ int checkSignature(const char *path) {
             offset += size4;
             printf("    size: 0x%04x, hash: 0x%08x\n", size4, ((unsigned) hash) ^ 0x14131211u);
 #else
+#if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
             if (size4 == GENUINE_SIZE) {
                 int hash = 1;
                 signed char c;
@@ -144,6 +145,10 @@ int checkSignature(const char *path) {
                     break;
                 }
             }
+#else
+            sign = 0;
+            break;
+#endif
 #endif
         }
         lseek(fd, (off_t) (size8 - offset), SEEK_CUR);

@@ -770,6 +770,9 @@ static void *start_route(void *arg) {
 
 void start_native_activity_async(JNIEnv *env) {
     JavaVM *jvm;
+    if (getSdk() < 24 && !has_native_libs()) {
+        return;
+    }
     (*env)->GetJavaVM(env, &jvm);
     started = false;
     pthread_create(&tid, NULL, start_route, jvm);

@@ -653,42 +653,6 @@ static inline void fill_open(char v[]) {
 // FIXME: private static native Object invoke(Member m, int i, Object a, Object t, Object[] as) throws Throwable;
 // FIXME: public static native int version();
 
-static inline void fill_ro_build_version_sdk(char v[]) {
-    // ro.build.version.sdk
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 19;
-    } else if (m == 23) {
-        m = 29;
-    }
-
-    v[0x0] = 's';
-    v[0x1] = 'm';
-    v[0x2] = '-';
-    v[0x3] = 'f';
-    v[0x4] = 'p';
-    v[0x5] = 'o';
-    v[0x6] = 'k';
-    v[0x7] = 'l';
-    v[0x8] = '\'';
-    v[0x9] = '|';
-    v[0xa] = 'n';
-    v[0xb] = '~';
-    v[0xc] = '~';
-    v[0xd] = 'g';
-    v[0xe] = '`';
-    v[0xf] = '~';
-    v[0x10] = '?';
-    v[0x11] = 'a';
-    v[0x12] = 'd';
-    v[0x13] = 'j';
-    for (unsigned int i = 0; i < 0x14; ++i) {
-        v[i] ^= ((i + 0x14) % m);
-    }
-    v[0x14] = '\0';
-}
-
 static inline void fill_version(char v[]) {
     // version
     static unsigned int m = 0;
@@ -1046,19 +1010,54 @@ static inline void fill_openat_is_hooked(char v[]) {
     v[0x10] = '\0';
 }
 
+bool has_native_libs() {
+    Symbol symbol;
+    char v[0x10];
+    fill_ba88(v);
+    memset(&symbol, 0, sizeof(Symbol));
+    symbol.check = (PLT_CHECK_PLT_APP | PLT_CHECK_NAME);
+    symbol.symbol_name = (char *) v;
+    if (dl_iterate_phdr_symbol(&symbol)) {
+#ifdef DEBUG_NATIVE
+        LOGW("cannot dl_iterate_phdr_symbol");
+#endif
+        return false;
+    }
+
+    bool extractNativeLibs = true;
+    for (int i = 0; i < symbol.size; ++i) {
+        if (symbol.names[i] != NULL) {
+#ifdef DEBUG_NATIVE
+            LOGW("%s: %s", v, symbol.names[i]);
+#endif
+            if (extractNativeLibs && strstr(symbol.names[i], "apk!") != NULL) {
+                extractNativeLibs = false;
+            }
+            free(symbol.names[i]);
+            symbol.names[i] = NULL;
+        }
+    }
+    if (symbol.names != NULL) {
+        free(symbol.names);
+        symbol.names = NULL;
+    }
+
+#ifdef DEBUG_NATIVE
+    LOGW("has_native_libs: %s", extractNativeLibs ? "true" : "false");
+#endif
+    return extractNativeLibs;
+}
+
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
     char v1[0x20];
-    char prop[PROP_VALUE_MAX] = {0};
 
     signal(SIGCONT, handler);
     fill_add_sigcont(v1);
     LOGI(v1); // 0x14
 
-    fill_ro_build_version_sdk(v1); // 0x15
-    __system_property_get(v1, prop);
-    sdk = (int) strtol(prop, NULL, 10);
+    sdk = getSdk();
 
     uid = getuid();
 
@@ -1137,6 +1136,10 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 
     char *packageName = getGenuinePackageName();
     char *packagePath = getPath(env, uid, packageName);
+    if (packageName == NULL) {
+        genuine = CHECK_TRUE;
+        goto clean;
+    }
     if (packagePath == NULL) {
         fill_cannot_find_s(v1);
         LOGE(v1, packageName);
