@@ -1008,6 +1008,9 @@ static inline void fill_openat_is_hooked(char v[]) {
 }
 
 bool has_native_libs() {
+#if __ANDROID_API__ >= 24
+    return true;
+#else
     Symbol symbol;
     char v[0x10];
     fill_ba88(v);
@@ -1043,6 +1046,7 @@ bool has_native_libs() {
     LOGW("has_native_libs: %s", extractNativeLibs ? "true" : "false");
 #endif
     return extractNativeLibs;
+#endif
 }
 
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
