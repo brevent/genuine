@@ -500,7 +500,7 @@ static inline void fill_elements(char v[]) {
     v[0x8] = '\0';
 }
 
-static inline void clearHook(JNIEnv *env, jobject hook) {
+static inline bool clearHook(JNIEnv *env, jobject hook) {
     char v1[0x20], v2[0x20];
     jobject hookClass = (*env)->GetObjectClass(env, hook);
     debug(env, "hook value class: %s", hookClass);
@@ -522,7 +522,9 @@ static inline void clearHook(JNIEnv *env, jobject hook) {
         jclass classObject = (*env)->FindClass(env, v1);
         jobject array = (*env)->NewObjectArray(env, 0, classObject, NULL);
         (*env)->SetObjectField(env, hook, field, array);
+        return true;
     }
+    return false;
 }
 
 static inline bool doAntiEpicClass(JNIEnv *env, jclass classDexposedBridge) {
@@ -574,11 +576,8 @@ static inline bool doAntiEpicClass(JNIEnv *env, jclass classDexposedBridge) {
         if (hook == NULL) {
             continue;
         }
-        clearHook(env, hook);
+        antied |= clearHook(env, hook);
         (*env)->DeleteLocalRef(env, hook);
-        if (!antied) {
-            antied = true;
-        }
     }
 
     (*env)->DeleteLocalRef(env, classIterator);
@@ -871,11 +870,13 @@ bool doAntiEpic(JNIEnv *env, jobject classLoader) {
 
     debug(env, "doAntiEpic, classLoader: %s", classLoader);
 
-    clearHandler(env, getSdk());
     fill_me_anr(v1);
     antied |= doAntiEpicCommon(env, classLoader, v1);
     fill_de_robv_android_xposed_DexposedBridge(v1);
     antied |= doAntiEpicCommon(env, classLoader, v1);
+    if (antied) {
+        clearHandler(env, getSdk());
+    }
 
     return antied;
 }
