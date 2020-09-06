@@ -68,10 +68,6 @@ void debug(JNIEnv *env, const char *format, jobject object);
 #define debug(...) do {} while(0);
 #endif
 
-jobject newLocalRef(JNIEnv *env, void *object);
-
-void DeleteLocalRef(JNIEnv *env, jobject object);
-
 #ifdef __cplusplus
 }
 #endif

@@ -11,18 +11,177 @@
 #include "anti-xposed.h"
 #include "epic.h"
 #include "art.h"
-#include <unordered_set>
+#include "hash.h"
 
-static std::unordered_set<intptr_t> classLoaders;
+#if !defined(NO_CHECK_XPOSED_EDXPOSED) || defined(CHECK_XPOSED_EPIC)
+static void inline fill_NewLocalRef(char v[]) {
+    // _ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 47;
+    } else if (m == 53) {
+        m = 59;
+    }
+
+    v[0x0] = '\\';
+    v[0x1] = '^';
+    v[0x2] = 'K';
+    v[0x3] = '5';
+    v[0x4] = 'f';
+    v[0x5] = 'z';
+    v[0x6] = '}';
+    v[0x7] = '3';
+    v[0x8] = 'A';
+    v[0x9] = 'B';
+    v[0xa] = 'D';
+    v[0xb] = 'K';
+    v[0xc] = 'a';
+    v[0xd] = 'f';
+    v[0xe] = 'T';
+    v[0xf] = 'j';
+    v[0x10] = 'g';
+    v[0x11] = '%';
+    v[0x12] = '$';
+    v[0x13] = 'X';
+    v[0x14] = 'r';
+    v[0x15] = 'o';
+    v[0x16] = 'U';
+    v[0x17] = 'u';
+    v[0x18] = 'x';
+    v[0x19] = '}';
+    v[0x1a] = 'q';
+    v[0x1b] = 'L';
+    v[0x1c] = 'z';
+    v[0x1d] = 'F';
+    v[0x1e] = 'd';
+    v[0x1f] = 'r';
+    v[0x20] = 'm';
+    v[0x21] = 'w';
+    v[0x22] = 'z';
+    v[0x23] = '\x10';
+    v[0x24] = 'J';
+    v[0x25] = 'A';
+    v[0x26] = '[';
+    v[0x27] = 'X';
+    v[0x28] = 'D';
+    v[0x29] = '^';
+    v[0x2a] = '\x1b';
+    v[0x2b] = 'a';
+    v[0x2c] = 'b';
+    v[0x2d] = 'k';
+    v[0x2e] = 'g';
+    v[0x2f] = '`';
+    v[0x30] = 'p';
+    v[0x31] = '@';
+    for (unsigned int i = 0; i < 0x32; ++i) {
+        v[i] ^= ((i + 0x32) % m);
+    }
+    v[0x32] = '\0';
+}
+
+static inline jobject newLocalRef(JNIEnv *env, void *object) {
+    static jobject (*NewLocalRef)(JNIEnv *, void *) = nullptr;
+    if (object == nullptr) {
+        return nullptr;
+    }
+    if (NewLocalRef == nullptr) {
+        char v[0x40];
+        fill_NewLocalRef(v);
+        NewLocalRef = (jobject (*)(JNIEnv *, void *)) plt_dlsym(v, nullptr);
+#ifdef DEBUG
+        LOGI("NewLocalRef: %p", NewLocalRef);
+#endif
+    }
+    if (NewLocalRef != nullptr) {
+        return NewLocalRef(env, object);
+    } else {
+        return nullptr;
+    }
+}
+
+static inline void fill_DeleteLocalRef(char v[]) {
+    // _ZN3art9JNIEnvExt14DeleteLocalRefEP8_jobject
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 43;
+    } else if (m == 47) {
+        m = 53;
+    }
+
+    v[0x0] = '^';
+    v[0x1] = 'X';
+    v[0x2] = 'M';
+    v[0x3] = '7';
+    v[0x4] = 'd';
+    v[0x5] = 't';
+    v[0x6] = 's';
+    v[0x7] = '1';
+    v[0x8] = 'C';
+    v[0x9] = 'D';
+    v[0xa] = 'B';
+    v[0xb] = 'I';
+    v[0xc] = 'c';
+    v[0xd] = 'x';
+    v[0xe] = 'J';
+    v[0xf] = 'h';
+    v[0x10] = 'e';
+    v[0x11] = '#';
+    v[0x12] = '\'';
+    v[0x13] = 'P';
+    v[0x14] = 'p';
+    v[0x15] = 'z';
+    v[0x16] = 'r';
+    v[0x17] = 'l';
+    v[0x18] = '|';
+    v[0x19] = 'V';
+    v[0x1a] = 't';
+    v[0x1b] = '\x7f';
+    v[0x1c] = '|';
+    v[0x1d] = 'r';
+    v[0x1e] = 'M';
+    v[0x1f] = 'E';
+    v[0x20] = 'G';
+    v[0x21] = 'g';
+    v[0x22] = 's';
+    v[0x23] = '\x1c';
+    v[0x24] = 'z';
+    v[0x25] = 'L';
+    v[0x26] = 'H';
+    v[0x27] = 'J';
+    v[0x28] = 'C';
+    v[0x29] = 'O';
+    v[0x2a] = 'c';
+    v[0x2b] = 'u';
+    for (unsigned int i = 0; i < 0x2c; ++i) {
+        v[i] ^= ((i + 0x2c) % m);
+    }
+    v[0x2c] = '\0';
+}
+
+static void DeleteLocalRef(JNIEnv *env, jobject object) {
+    static void (*DeleteLocalRef)(JNIEnv *, jobject) = nullptr;
+    if (DeleteLocalRef == nullptr) {
+        char v[0x30];
+        fill_DeleteLocalRef(v);
+        DeleteLocalRef = (void (*)(JNIEnv *, jobject)) plt_dlsym(v, nullptr);
+#ifdef DEBUG
+        LOGI("DeleteLocalRef: %p", DeleteLocalRef);
+#endif
+    }
+    if (DeleteLocalRef != nullptr) {
+        DeleteLocalRef(env, object);
+    }
+}
 
 static void doAntiXposed(JNIEnv *env, jobject object, intptr_t hash) {
-    if (classLoaders.find(hash) != classLoaders.end()) {
+    if (!add(hash)) {
         debug(env, "checked %s", object);
         return;
     }
-    classLoaders.insert(hash);
 #ifdef DEBUG
-    LOGI("anti xposed, env: %p, class loader: %p", env, object);
+    LOGI("doAntiXposed, classLoader: %p, hash: %x", object, hash);
 #endif
 #ifndef NO_CHECK_XPOSED_EDXPOSED
     if (doAntiEdXposed(env, object)) {
@@ -322,6 +481,7 @@ void checkClassLoader(JNIEnv *env, int sdk) {
     checkGlobalRef(env, clazz);
     checkWeakGlobalRef(env, clazz);
 
-    classLoaders.clear();
+    clear();
     env->DeleteLocalRef(clazz);
 }
+#endif
