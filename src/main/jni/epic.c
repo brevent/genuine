@@ -391,46 +391,6 @@ static inline void fill_next_signature(char v[]) {
     v[0x14] = '\0';
 }
 
-static inline void fill_clear(char v[]) {
-    // clear
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 3;
-    } else if (m == 5) {
-        m = 7;
-    }
-
-    v[0x0] = 'a';
-    v[0x1] = 'l';
-    v[0x2] = 'd';
-    v[0x3] = 'c';
-    v[0x4] = 'r';
-    for (unsigned int i = 0; i < 0x5; ++i) {
-        v[i] ^= ((i + 0x5) % m);
-    }
-    v[0x5] = '\0';
-}
-
-static inline void fill_clear_signature(char v[]) {
-    // ()V
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 2;
-    } else if (m == 3) {
-        m = 5;
-    }
-
-    v[0x0] = ')';
-    v[0x1] = ')';
-    v[0x2] = 'W';
-    for (unsigned int i = 0; i < 0x3; ++i) {
-        v[i] ^= ((i + 0x3) % m);
-    }
-    v[0x3] = '\0';
-}
-
 static inline void fill_x(char v[]) {
     // ˏ
     static unsigned int m = 0;
@@ -516,31 +476,52 @@ static inline void fill_java_lang_Object(char v[]) {
     v[0x10] = '\0';
 }
 
+static inline void fill_elements(char v[]) {
+    // elements
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 7;
+    } else if (m == 11) {
+        m = 13;
+    }
+
+    v[0x0] = 'd';
+    v[0x1] = 'n';
+    v[0x2] = 'f';
+    v[0x3] = 'i';
+    v[0x4] = '`';
+    v[0x5] = 'h';
+    v[0x6] = 't';
+    v[0x7] = 'r';
+    for (unsigned int i = 0; i < 0x8; ++i) {
+        v[i] ^= ((i + 0x8) % m);
+    }
+    v[0x8] = '\0';
+}
+
 static inline void clearHook(JNIEnv *env, jobject hook) {
     char v1[0x20], v2[0x20];
     jobject hookClass = (*env)->GetObjectClass(env, hook);
     debug(env, "hook value class: %s", hookClass);
-    fill_clear(v1); // 0x5
-    fill_clear_signature(v2); // 0x4
-    jmethodID method = (*env)->GetMethodID(env, (jclass) hookClass, v1, v2);
+    fill_x(v1);
+    fill_signature(v2);
+    jfieldID field = (*env)->GetFieldID(env, hookClass, v1, v2);
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
     }
-    if (method != NULL) {
-        (*env)->CallObjectMethod(env, hook, method);
-    } else {
-        fill_x(v1);
-        fill_signature(v2);
-        jfieldID field = (*env)->GetFieldID(env, hookClass, v1, v2);
+    if (field == NULL) {
+        fill_elements(v1);
+        field = (*env)->GetFieldID(env, hookClass, v1, v2);
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
-        if (field != NULL) {
-            fill_java_lang_Object(v1);
-            jclass object = (*env)->FindClass(env, v1);
-            jobject array = (*env)->NewObjectArray(env, 0, object, NULL);
-            (*env)->SetObjectField(env, hook, field, array);
-        }
+    }
+    if (field != NULL) {
+        fill_java_lang_Object(v1);
+        jclass classObject = (*env)->FindClass(env, v1);
+        jobject array = (*env)->NewObjectArray(env, 0, classObject, NULL);
+        (*env)->SetObjectField(env, hook, field, array);
     }
 }
 
