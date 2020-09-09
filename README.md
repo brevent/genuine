@@ -50,11 +50,7 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 /* define to turn off xposed check */
 // #define NO_CHECK_XPOSED
 
-/* define to turn off xposed-edxposed check */
-// #define NO_CHECK_XPOSED_EDXPOSED
-
 /* define to turn on xposed-epic check
- * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en
  */
 // #define CHECK_XPOSED_EPIC
 

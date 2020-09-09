@@ -116,11 +116,7 @@ public class SimpleApkV2 {
                 "/* define to turn off xposed check */\n" +
                 "// #define NO_CHECK_XPOSED\n" +
                 "\n" +
-                "/* define to turn off xposed-edxposed check */\n" +
-                "// #define NO_CHECK_XPOSED_EDXPOSED\n" +
-                "\n" +
                 "/* define to turn on xposed-epic check\n" +
-                " * requires stl, refer https://developer.android.com/ndk/guides/cpp-support?hl=en\n" +
                 " */\n" +
                 "// #define CHECK_XPOSED_EPIC\n" +
                 "\n" +
