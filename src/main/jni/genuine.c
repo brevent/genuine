@@ -1168,9 +1168,6 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         LOGI("antiXposed start");
 #endif
         antiXposed(env, clazz, sdk, &xposed);
-#endif
-
-#if !defined(NO_CHECK_XPOSED_EDXPOSED) || defined(CHECK_XPOSED_EPIC)
         checkClassLoader(env, sdk);
 #endif
     }

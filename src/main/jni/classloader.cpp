@@ -13,7 +13,7 @@
 #include "art.h"
 #include "hash.h"
 
-#if !defined(NO_CHECK_XPOSED_EDXPOSED) || defined(CHECK_XPOSED_EPIC)
+#ifndef NO_CHECK_XPOSED
 static void inline fill_NewLocalRef(char v[]) {
     // _ZN3art9JNIEnvExt11NewLocalRefEPNS_6mirror6ObjectE
     static unsigned int m = 0;
@@ -183,13 +183,11 @@ static void doAntiXposed(JNIEnv *env, jobject object, intptr_t hash) {
 #ifdef DEBUG
     LOGI("doAntiXposed, classLoader: %p, hash: %x", object, hash);
 #endif
-#ifndef NO_CHECK_XPOSED_EDXPOSED
-    if (doAntiEdXposed(env, object)) {
-#ifdef DEBUG
-        LOGI("antied edxposed");
-#endif
+    jclass classXposedBridge = findXposedBridge(env, object);
+    if (classXposedBridge == nullptr) {
+        return;
     }
-#endif
+    disableXposedBridge(env, classXposedBridge);
 #ifdef CHECK_XPOSED_EPIC
     if (doAntiEpic(env, object)) {
 #ifdef DEBUG

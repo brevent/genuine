@@ -1,6 +1,102 @@
 #include "epic.h"
+#include "anti-xposed.h"
+#include "epic-method.h"
+#include "epic-field.h"
+#include <stdlib.h>
 
 #ifdef CHECK_XPOSED_EPIC
+
+static inline void fill_me_weishu_epic_art2_EpicNative(char v[]) {
+    // me/weishu/epic/art2/EpicNative
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 29;
+    } else if (m == 31) {
+        m = 37;
+    }
+
+    v[0x0] = 'l';
+    v[0x1] = 'g';
+    v[0x2] = ',';
+    v[0x3] = 's';
+    v[0x4] = '`';
+    v[0x5] = 'o';
+    v[0x6] = 't';
+    v[0x7] = '`';
+    v[0x8] = '|';
+    v[0x9] = '%';
+    v[0xa] = 'n';
+    v[0xb] = '|';
+    v[0xc] = 'd';
+    v[0xd] = 'm';
+    v[0xe] = ' ';
+    v[0xf] = 'q';
+    v[0x10] = 'c';
+    v[0x11] = 'f';
+    v[0x12] = '!';
+    v[0x13] = ';';
+    v[0x14] = 'P';
+    v[0x15] = 'f';
+    v[0x16] = '~';
+    v[0x17] = '{';
+    v[0x18] = 'W';
+    v[0x19] = '{';
+    v[0x1a] = 'o';
+    v[0x1b] = 'u';
+    v[0x1c] = 'v';
+    v[0x1d] = 'd';
+    for (unsigned int i = 0; i < 0x1e; ++i) {
+        v[i] ^= ((i + 0x1e) % m);
+    }
+    v[0x1e] = '\0';
+}
+
+static inline void fill_me_weishu_epic_art2_EpicBridge(char v[]) {
+    // me/weishu/epic/art2/EpicBridge
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 29;
+    } else if (m == 31) {
+        m = 37;
+    }
+
+    v[0x0] = 'l';
+    v[0x1] = 'g';
+    v[0x2] = ',';
+    v[0x3] = 's';
+    v[0x4] = '`';
+    v[0x5] = 'o';
+    v[0x6] = 't';
+    v[0x7] = '`';
+    v[0x8] = '|';
+    v[0x9] = '%';
+    v[0xa] = 'n';
+    v[0xb] = '|';
+    v[0xc] = 'd';
+    v[0xd] = 'm';
+    v[0xe] = ' ';
+    v[0xf] = 'q';
+    v[0x10] = 'c';
+    v[0x11] = 'f';
+    v[0x12] = '!';
+    v[0x13] = ';';
+    v[0x14] = 'P';
+    v[0x15] = 'f';
+    v[0x16] = '~';
+    v[0x17] = '{';
+    v[0x18] = '[';
+    v[0x19] = 'h';
+    v[0x1a] = 'r';
+    v[0x1b] = 'x';
+    v[0x1c] = 'g';
+    v[0x1d] = 'd';
+    for (unsigned int i = 0; i < 0x1e; ++i) {
+        v[i] ^= ((i + 0x1e) % m);
+    }
+    v[0x1e] = '\0';
+}
 
 static inline void fill_hookedMethodCallbacks(char v[]) {
     // hookedMethodCallbacks
@@ -391,24 +487,6 @@ static inline void fill_next_signature(char v[]) {
     v[0x14] = '\0';
 }
 
-static inline void fill_x(char v[]) {
-    // ˏ
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 2;
-    } else if (m == 3) {
-        m = 5;
-    }
-
-    v[0x0] = (char) '\xcb';
-    v[0x1] = (char) '\x8e';
-    for (unsigned int i = 0; i < 0x2; ++i) {
-        v[i] ^= ((i + 0x2) % m);
-    }
-    v[0x2] = '\0';
-}
-
 static inline void fill_signature(char v[]) {
     // [Ljava/lang/Object;
     static unsigned int m = 0;
@@ -476,69 +554,39 @@ static inline void fill_java_lang_Object(char v[]) {
     v[0x10] = '\0';
 }
 
-static inline void fill_elements(char v[]) {
-    // elements
-    static unsigned int m = 0;
+static jfieldID findMapField(JNIEnv *env, jclass classDexposedBridge) {
+    char signature[0x20];
 
-    if (m == 0) {
-        m = 7;
-    } else if (m == 11) {
-        m = 13;
-    }
-
-    v[0x0] = 'd';
-    v[0x1] = 'n';
-    v[0x2] = 'f';
-    v[0x3] = 'i';
-    v[0x4] = '`';
-    v[0x5] = 'h';
-    v[0x6] = 't';
-    v[0x7] = 'r';
-    for (unsigned int i = 0; i < 0x8; ++i) {
-        v[i] ^= ((i + 0x8) % m);
-    }
-    v[0x8] = '\0';
-}
-
-static inline bool clearHook(JNIEnv *env, jobject hook) {
-    char v1[0x20], v2[0x20];
-    jobject hookClass = (*env)->GetObjectClass(env, hook);
-    debug(env, "hook value class: %s", hookClass);
-    fill_x(v1);
-    fill_signature(v2);
-    jfieldID field = (*env)->GetFieldID(env, hookClass, v1, v2);
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
-    if (field == NULL) {
-        fill_elements(v1);
-        field = (*env)->GetFieldID(env, hookClass, v1, v2);
+    fill_hookedMethodCallbacks_signature(signature);
+    const char *mapName = findStaticMapName(env, classDexposedBridge);
+    if (mapName != NULL) {
+#ifdef DEBUG
+        LOGI("mapName: %s", mapName);
+#endif
+        return (*env)->GetStaticFieldID(env, classDexposedBridge, mapName, signature);
+    } else {
+        char name[0x20];
+        fill_hookedMethodCallbacks(name); // 0x16
+        jfieldID field = (*env)->GetStaticFieldID(env, classDexposedBridge, mapName, signature);
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
         }
+        if (field == NULL) {
+            debug(env, "cannot find hookedMethodCallbacks in %s", classDexposedBridge);
+        }
+        return field;
     }
-    if (field != NULL) {
-        fill_java_lang_Object(v1);
-        jclass classObject = (*env)->FindClass(env, v1);
-        jobject array = (*env)->NewObjectArray(env, 0, classObject, NULL);
-        (*env)->SetObjectField(env, hook, field, array);
-        return true;
-    }
-    return false;
 }
 
 static inline bool doAntiEpicClass(JNIEnv *env, jclass classDexposedBridge) {
     char v1[0x20], v2[0x20];
     bool antied = false;
 
-    fill_hookedMethodCallbacks(v1); // 0x16
-    fill_hookedMethodCallbacks_signature(v2); // 0x10
-    jfieldID field = (*env)->GetStaticFieldID(env, classDexposedBridge, v1, v2);
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
+    jfieldID field = findMapField(env, classDexposedBridge);
     if (field == NULL) {
-        debug(env, "cannot find hookedMethodCallbacks in %s", classDexposedBridge);
+#ifdef DEBUG
+        LOGI("cannot find static map");
+#endif
         return false;
     }
     jobject map = (*env)->GetStaticObjectField(env, classDexposedBridge, field);
@@ -570,13 +618,34 @@ static inline bool doAntiEpicClass(JNIEnv *env, jclass classDexposedBridge) {
     fill_next_signature(v2); // 0x15
     jmethodID next = (*env)->GetMethodID(env, classIterator, v1, v2);
 
+    fill_java_lang_Object(v1);
+    jclass classObject = (*env)->FindClass(env, v1);
+    jobject emptyArray = (*env)->NewObjectArray(env, 0, classObject, NULL);
+    jfieldID fieldElements = NULL;
     while ((*env)->CallBooleanMethod(env, iterator, hasNext)) {
         jobject hook = (*env)->CallObjectMethod(env, iterator, next);
         debug(env, "hook value: %s", hook);
         if (hook == NULL) {
             continue;
         }
-        antied |= clearHook(env, hook);
+        if (fieldElements == NULL) {
+            jobject hookClass = (*env)->GetObjectClass(env, hook);
+            char *name = findObjectArrayName(env, hookClass);
+            if (name == NULL) {
+                (*env)->DeleteLocalRef(env, hookClass);
+                break;
+            }
+            fill_signature(v1);
+            fieldElements = (*env)->GetFieldID(env, hookClass, name, v1);
+            free(name);
+            (*env)->DeleteLocalRef(env, hookClass);
+        }
+        (*env)->SetObjectField(env, hook, fieldElements, emptyArray);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        } else if (!antied) {
+            antied = true;
+        }
         (*env)->DeleteLocalRef(env, hook);
     }
 
@@ -590,176 +659,8 @@ static inline bool doAntiEpicClass(JNIEnv *env, jclass classDexposedBridge) {
     return antied;
 }
 
-static inline void fill_java_lang_VMClassLoader(char v[]) {
-    // java/lang/VMClassLoader
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 19;
-    } else if (m == 23) {
-        m = 29;
-    }
-
-    v[0x0] = 'n';
-    v[0x1] = 'd';
-    v[0x2] = 'p';
-    v[0x3] = 'f';
-    v[0x4] = '\'';
-    v[0x5] = 'e';
-    v[0x6] = 'k';
-    v[0x7] = 'e';
-    v[0x8] = 'k';
-    v[0x9] = '"';
-    v[0xa] = 'X';
-    v[0xb] = 'B';
-    v[0xc] = 'S';
-    v[0xd] = '}';
-    v[0xe] = 's';
-    v[0xf] = 's';
-    v[0x10] = 'r';
-    v[0x11] = 'N';
-    v[0x12] = 'l';
-    v[0x13] = 'e';
-    v[0x14] = 'a';
-    v[0x15] = 'c';
-    v[0x16] = 'u';
-    for (unsigned int i = 0; i < 0x17; ++i) {
-        v[i] ^= ((i + 0x17) % m);
-    }
-    v[0x17] = '\0';
-}
-
-static inline void fill_findLoadedClass(char v[]) {
-    // findLoadedClass
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 13;
-    } else if (m == 17) {
-        m = 19;
-    }
-
-    v[0x0] = 'd';
-    v[0x1] = 'j';
-    v[0x2] = 'j';
-    v[0x3] = 'a';
-    v[0x4] = 'J';
-    v[0x5] = 'h';
-    v[0x6] = 'i';
-    v[0x7] = 'm';
-    v[0x8] = 'o';
-    v[0x9] = 'o';
-    v[0xa] = 'O';
-    v[0xb] = 'l';
-    v[0xc] = '`';
-    v[0xd] = 'q';
-    v[0xe] = 'p';
-    for (unsigned int i = 0; i < 0xf; ++i) {
-        v[i] ^= ((i + 0xf) % m);
-    }
-    v[0xf] = '\0';
-}
-
-static inline void fill_findLoadedClass_signature(char v[]) {
-    // (Ljava/lang/ClassLoader;Ljava/lang/String;)Ljava/lang/Class;
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 59;
-    } else if (m == 61) {
-        m = 67;
-    }
-
-    v[0x0] = ')';
-    v[0x1] = 'N';
-    v[0x2] = 'i';
-    v[0x3] = 'e';
-    v[0x4] = 's';
-    v[0x5] = 'g';
-    v[0x6] = '(';
-    v[0x7] = 'd';
-    v[0x8] = 'h';
-    v[0x9] = 'd';
-    v[0xa] = 'l';
-    v[0xb] = '#';
-    v[0xc] = 'N';
-    v[0xd] = 'b';
-    v[0xe] = 'n';
-    v[0xf] = 'c';
-    v[0x10] = 'b';
-    v[0x11] = '^';
-    v[0x12] = '|';
-    v[0x13] = 'u';
-    v[0x14] = 'q';
-    v[0x15] = 's';
-    v[0x16] = 'e';
-    v[0x17] = '#';
-    v[0x18] = 'U';
-    v[0x19] = 'p';
-    v[0x1a] = 'z';
-    v[0x1b] = 'j';
-    v[0x1c] = '|';
-    v[0x1d] = '1';
-    v[0x1e] = 's';
-    v[0x1f] = 'A';
-    v[0x20] = 'O';
-    v[0x21] = 'E';
-    v[0x22] = '\x0c';
-    v[0x23] = 'w';
-    v[0x24] = 'Q';
-    v[0x25] = 'T';
-    v[0x26] = 'N';
-    v[0x27] = 'F';
-    v[0x28] = 'N';
-    v[0x29] = '\x11';
-    v[0x2a] = '\x02';
-    v[0x2b] = '`';
-    v[0x2c] = 'G';
-    v[0x2d] = 'O';
-    v[0x2e] = 'Y';
-    v[0x2f] = 'Q';
-    v[0x30] = '\x1e';
-    v[0x31] = '^';
-    v[0x32] = 'R';
-    v[0x33] = 'Z';
-    v[0x34] = 'R';
-    v[0x35] = '\x19';
-    v[0x36] = 't';
-    v[0x37] = 'T';
-    v[0x38] = 'X';
-    v[0x39] = 'I';
-    v[0x3a] = 's';
-    v[0x3b] = ':';
-    for (unsigned int i = 0; i < 0x3c; ++i) {
-        v[i] ^= ((i + 0x3c) % m);
-    }
-    v[0x3c] = '\0';
-}
-
-static inline void fill_me_anr(char v[]) {
-    // me.anr
-    static unsigned int m = 0;
-
-    if (m == 0) {
-        m = 5;
-    } else if (m == 7) {
-        m = 11;
-    }
-
-    v[0x0] = 'l';
-    v[0x1] = 'g';
-    v[0x2] = '-';
-    v[0x3] = 'e';
-    v[0x4] = 'n';
-    v[0x5] = 's';
-    for (unsigned int i = 0; i < 0x6; ++i) {
-        v[i] ^= ((i + 0x6) % m);
-    }
-    v[0x6] = '\0';
-}
-
 static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
-    // de.robv.android.xposed.DexposedBridge
+    // de/robv/android/xposed/DexposedBridge
     static unsigned int m = 0;
 
     if (m == 0) {
@@ -770,12 +671,12 @@ static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
 
     v[0x0] = 'b';
     v[0x1] = 'b';
-    v[0x2] = '&';
+    v[0x2] = '\'';
     v[0x3] = '{';
     v[0x4] = 'e';
     v[0x5] = 'i';
     v[0x6] = 'z';
-    v[0x7] = '#';
+    v[0x7] = '"';
     v[0x8] = 'o';
     v[0x9] = 'a';
     v[0xa] = 't';
@@ -783,14 +684,14 @@ static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
     v[0xc] = '}';
     v[0xd] = 'z';
     v[0xe] = 'p';
-    v[0xf] = ';';
+    v[0xf] = ':';
     v[0x10] = 'n';
     v[0x11] = 'g';
     v[0x12] = 'w';
     v[0x13] = 'j';
     v[0x14] = '\x7f';
     v[0x15] = '\x7f';
-    v[0x16] = '2';
+    v[0x16] = '3';
     v[0x17] = 'Y';
     v[0x18] = '{';
     v[0x19] = 'x';
@@ -812,43 +713,8 @@ static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
 }
 
 static bool doAntiEpicCommon(JNIEnv *env, jobject classLoader, const char *name) {
-    char v1[0x10], v2[0x3d];
     bool antied = false;
-
-#ifdef DEBUG
-    LOGI("doAntiEpicCommon, classLoader: %p, name: %s", classLoader, name);
-#endif
-
-    fill_java_lang_VMClassLoader(v2); // 0x18
-    jclass vmClassLoader = (*env)->FindClass(env, v2);
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
-    if (vmClassLoader == NULL) {
-        goto clean;
-    }
-
-    fill_findLoadedClass(v1); // 0x10
-    fill_findLoadedClass_signature(v2); // 0x3d
-    jmethodID method = (*env)->GetStaticMethodID(env, vmClassLoader, v1, v2);
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
-    if (method == NULL) {
-        goto cleanVmClassLoader;
-    }
-
-    jstring stringDexposedBridge = (*env)->NewStringUTF(env, name);
-    jobject classDexposedBridge = (*env)->CallStaticObjectMethod(env,
-                                                                 vmClassLoader,
-                                                                 method,
-                                                                 classLoader,
-                                                                 stringDexposedBridge);
-
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
-
+    jclass classDexposedBridge = findLoadedClass(env, classLoader, name);
     if (classDexposedBridge != NULL) {
 #ifdef DEBUG
         LOGI("found %s", name);
@@ -856,11 +722,6 @@ static bool doAntiEpicCommon(JNIEnv *env, jobject classLoader, const char *name)
         antied = doAntiEpicClass(env, (jclass) classDexposedBridge);
         (*env)->DeleteLocalRef(env, classDexposedBridge);
     }
-
-    (*env)->DeleteLocalRef(env, stringDexposedBridge);
-cleanVmClassLoader:
-    (*env)->DeleteLocalRef(env, vmClassLoader);
-clean:
     return antied;
 }
 
@@ -870,10 +731,27 @@ bool doAntiEpic(JNIEnv *env, jobject classLoader) {
 
     debug(env, "doAntiEpic, classLoader: %s", classLoader);
 
-    fill_me_anr(v1);
-    antied |= doAntiEpicCommon(env, classLoader, v1);
-    fill_de_robv_android_xposed_DexposedBridge(v1);
-    antied |= doAntiEpicCommon(env, classLoader, v1);
+    fill_me_weishu_epic_art2_EpicNative(v1);
+    jclass epicNative = findLoadedClass(env, classLoader, v1);
+    if (epicNative != NULL) {
+        char *bridgeClass = findVoidStringName(env, epicNative);
+#ifdef DEBUG
+        LOGI("bridge class: %s", bridgeClass);
+#endif
+        if (bridgeClass != NULL) {
+            antied |= doAntiEpicCommon(env, classLoader, bridgeClass);
+            free(bridgeClass);
+        }
+        (*env)->DeleteLocalRef(env, epicNative);
+    }
+    if (!antied) {
+        fill_me_weishu_epic_art2_EpicBridge(v1);
+        antied |= doAntiEpicCommon(env, classLoader, v1);
+    }
+    if (!antied) {
+        fill_de_robv_android_xposed_DexposedBridge(v1);
+        antied |= doAntiEpicCommon(env, classLoader, v1);
+    }
     if (antied) {
         clearHandler(env, getSdk());
     }

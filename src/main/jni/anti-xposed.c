@@ -1122,11 +1122,14 @@ static inline void fill_disableHooks_signature(char v[]) {
     v[0x1] = '\0';
 }
 
-bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
+jclass findLoadedClass(JNIEnv *env, jobject classLoader, const char *name) {
     char v1[0x80], v2[0x80];
-    bool antied = false;
+    jclass loadedClass = NULL;
 
-    debug(env, "doAntiEdXposed, classLoader: %s", classLoader);
+    debug(env, "findLoadedClass, classLoader: %s", classLoader);
+#ifdef DEBUG
+    LOGI("findLoadedClass, name: %s", name);
+#endif
 
     fill_java_lang_VMClassLoader(v1);
     jclass vmClassLoader = (*env)->FindClass(env, v1);
@@ -1147,50 +1150,49 @@ bool doAntiEdXposed(JNIEnv *env, jobject classLoader) {
         goto cleanVmClassLoader;
     }
 
-    fill_de_robv_android_xposed_XposedBridge(v1);
-    jstring stringXposedBridge = (*env)->NewStringUTF(env, v1);
-    jclass classXposedBridge = (jclass) (*env)->CallStaticObjectMethod(env,
-                                                                       vmClassLoader,
-                                                                       findLoadedClass,
-                                                                       classLoader,
-                                                                       stringXposedBridge);
+    jstring string = (*env)->NewStringUTF(env, name);
+    loadedClass = (jclass) (*env)->CallStaticObjectMethod(env,
+                                                          vmClassLoader,
+                                                          findLoadedClass,
+                                                          classLoader,
+                                                          string);
 
     if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionClear(env);
     }
 
 #ifdef DEBUG
-    debug(env, "XposedBridge: %s", classXposedBridge);
+    debug(env, "loaded class: %s", loadedClass);
 #endif
 
-    if (classXposedBridge != NULL) {
-        fill_disableHooks(v1);
-        fill_disableHooks_signature(v2);
-        jfieldID field = (*env)->GetStaticFieldID(env, classXposedBridge, v1, v2);
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
-        if (field != NULL) {
-#ifdef DEBUG
-            jboolean old = (*env)->GetStaticBooleanField(env, classXposedBridge, field);
-#endif
-            (*env)->SetStaticBooleanField(env, classXposedBridge, field, JNI_TRUE);
-#ifdef DEBUG
-            jboolean new = (*env)->GetStaticBooleanField(env, classXposedBridge, field);
-            if (old != new) {
-                LOGI("changed XposedBridge.disableHooks from %s to %s",
-                     old ? "true" : "false",
-                     new ? "true" : "false");
-            }
-#endif
-            antied = true;
-        }
-        (*env)->DeleteLocalRef(env, classXposedBridge);
-    }
-
-    (*env)->DeleteLocalRef(env, stringXposedBridge);
+    (*env)->DeleteLocalRef(env, string);
 cleanVmClassLoader:
     (*env)->DeleteLocalRef(env, vmClassLoader);
 clean:
-    return antied;
+    return loadedClass;
+}
+
+jclass findXposedBridge(JNIEnv *env, jobject classLoader) {
+    char v1[0x80];
+    fill_de_robv_android_xposed_XposedBridge(v1);
+    return findLoadedClass(env, classLoader, v1);
+}
+
+bool disableXposedBridge(JNIEnv *env, jclass classXposedBridge) {
+    char v1[0x80], v2[0x80];
+    fill_disableHooks(v1);
+    fill_disableHooks_signature(v2);
+    jfieldID field = (*env)->GetStaticFieldID(env, classXposedBridge, v1, v2);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+    }
+    if (field == NULL) {
+        return false;
+    }
+    (*env)->SetStaticBooleanField(env, classXposedBridge, field, JNI_TRUE);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+        return false;
+    }
+    return true;
 }

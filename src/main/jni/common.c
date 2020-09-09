@@ -230,7 +230,7 @@ void debug(JNIEnv *env, const char *format, jobject object) {
     if (object == NULL) {
         LOGI(format, NULL);
     } else {
-        jclass objectClass = (*env)->GetObjectClass(env, object);
+        jclass objectClass = (*env)->FindClass(env, "java/lang/Object");
         jmethodID toString = (*env)->GetMethodID(env, objectClass, "toString",
                                                  "()Ljava/lang/String;");
         jstring string = (jstring) (*env)->CallObjectMethod(env, object, toString);
