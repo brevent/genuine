@@ -9,6 +9,8 @@ android {
         targetSdkVersion rootProject.targetSdkVersion
         versionCode rootProject.versionCode
         versionName rootProject.versionName
+        buildConfigField 'int', 'VERSION_CODE', "${versionCode}"
+        buildConfigField 'String', 'VERSION_NAME', "\"${versionName}\""
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
         }
