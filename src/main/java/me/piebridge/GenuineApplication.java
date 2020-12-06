@@ -20,7 +20,7 @@ public class GenuineApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        mFake = BuildConfig.VERSION_CODE != Genuine.version();
+        mFake = BuildConfig.APP_VERSION_CODE != Genuine.version();
     }
 
     public final void setFake() {
