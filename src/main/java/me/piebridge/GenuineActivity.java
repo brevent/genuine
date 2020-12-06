@@ -34,7 +34,7 @@ public class GenuineActivity extends AppCompatActivity {
 
     private void showFake(int resId) {
         FakeFragment fragment = (FakeFragment) getSupportFragmentManager().findFragmentByTag(FRAGMENT_FAKE);
-        if (fragment == null || fragment.getMessage() != resId) {
+        if (fragment == null || fragment.getMessage() != (resId ^ magic)) {
             if (fragment != null) {
                 fragment.dismiss();
             }
