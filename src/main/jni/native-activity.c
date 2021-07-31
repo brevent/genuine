@@ -385,15 +385,26 @@ static jobject getLabel(JNIEnv *env, jobject activity) {
 static void onNativeWindowCreated(ANativeActivity *activity, ANativeWindow *window) {
 #ifdef DEBUG_GENUINE
     LOGI("onNativeWindowCreated start %p %p", activity, window);
+    LOGI("window, format: %d, width: %d, height: %d", ANativeWindow_getFormat(window), ANativeWindow_getWidth(window), ANativeWindow_getHeight(window));
 #endif
+
+#define FORMAT AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM
+    if (ANativeWindow_getFormat(window) != FORMAT) {
+        ANativeWindow_setBuffersGeometry(window, ANativeWindow_getWidth(window), ANativeWindow_getHeight(window), FORMAT);
+    }
 
     ANativeWindow_Buffer buffer = {0};
     ANativeWindow_lock(window, &buffer, NULL);
 
-#define FORMAT AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM
+#ifdef DEBUG_GENUINE
+    LOGI("buffer, format: %d, width: %d, height: %d, stride: %d",
+         buffer.format, buffer.width, buffer.height, buffer.stride);
+#endif
     if (buffer.format != FORMAT) {
-        ANativeWindow_setBuffersGeometry(window, buffer.width, buffer.height, FORMAT);
+        ANativeWindow_unlockAndPost(window);
+        return;
     }
+
     uint32_t *bits = buffer.bits;
     for (int i = 0; i < buffer.width; ++i) {
         bits[i] = 0xFF000000;
