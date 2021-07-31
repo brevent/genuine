@@ -406,12 +406,9 @@ static void onNativeWindowCreated(ANativeActivity *activity, ANativeWindow *wind
     }
 
     uint32_t *bits = buffer.bits;
-    for (int i = 0; i < buffer.width; ++i) {
-        bits[i] = 0xFF000000;
-    }
-    for (int i = 1; i < buffer.height; ++i) {
+    for (int i = 0; i < buffer.height; ++i) {
+        memset(bits, 0, buffer.width * sizeof(uint32_t));
         bits += buffer.stride;
-        memcpy(bits, buffer.bits, buffer.width * sizeof(uint32_t));
     }
 
     JNIEnv *env = activity->env;
