@@ -656,6 +656,11 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
     fill_getApplicationInfo(v1);
     fill_getApplicationInfo_signature(v2);
     method = (*env)->GetMethodID(env, classIPackageManager, v1, v2);
+    if (method == NULL) {
+        (*env)->ExceptionClear(env);
+        v2[19] = 'J';
+        method = (*env)->GetMethodID(env, classIPackageManager, v1, v2);
+    }
 #ifdef DEBUG
     LOGI("getApplicationInfo: %p", method);
 #endif
