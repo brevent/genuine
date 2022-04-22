@@ -95,6 +95,12 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 
 ```
 
+# fill_xxxx
+
+```
+python3 fill_v_value.py v <value>
+```
+
 # practices
 
 1. make sure libgenuine.so always loaded
@@ -105,4 +111,4 @@ Since 2019-03, Genuine switch to pure c for hide itself. If you want to hide you
 
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
 
-For commercial usage, contact me. However, if you are individial, or enterprise less than 5 staff, you can use it under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/).
+For commercial usage, contact me. However, if you are individial, or enterprise less than 5 staff, you can use it under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
