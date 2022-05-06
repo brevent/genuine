@@ -2,7 +2,7 @@
 # encoding: utf-8
 # Author: Liu DongMiao <liudongmiao@gmail.com>
 # Created  : Sun 20 May 2018 12:04:18 AM CST
-# Modified : Fri 22 Apr 2022 11:14:07 PM CST
+# Modified : Wed 04 May 2022 12:35:38 AM CST
 
 import sys
 
@@ -41,6 +41,10 @@ if '(' in v or ';' in v:
     method = 'signature'
 else:
     method = v.replace('/', '_').replace('%', '').replace(' ', '_')
+if len(sys.argv) > 3:
+    method = sys.argv[3]
+    if '(' in v or ';' in v and not method.endswith('_signature'):
+        method += '_signature'
 print('static inline void fill_%s(char %s[]) {' % (method, k))
 print('    // %s' % v)
 print('    static unsigned int m = 0;')
