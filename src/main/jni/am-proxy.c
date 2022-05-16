@@ -786,12 +786,6 @@ bool isAmProxy(JNIEnv *env, int sdk) {
         goto clean;
     }
 
-    bool equals = (*env)->IsSameObject(env, binder, service);
-#ifdef DEBUG
-    LOGI("binder: %p, service: %p, equals: %d", binder, service, equals);
-#endif
-    proxy = !equals;
-
 clean:
     if (serviceClass != NULL) {
         (*env)->DeleteLocalRef(env, serviceClass);

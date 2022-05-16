@@ -1125,18 +1125,20 @@ static inline void fill_disableHooks_signature(char v[]) {
 jclass findLoadedClass(JNIEnv *env, jobject classLoader, const char *name) {
     char v1[0x80], v2[0x80];
     jclass loadedClass = NULL;
-
-    debug(env, "findLoadedClass, classLoader: %s", classLoader);
-#ifdef DEBUG
-    LOGI("findLoadedClass, name: %s", name);
-#endif
+    jstring nameAsString;
 
     fill_java_lang_VMClassLoader(v1);
     jclass vmClassLoader = (*env)->FindClass(env, v1);
     if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
+        (*env)->ExceptionDescribe(env);
+#endif
         (*env)->ExceptionClear(env);
     }
     if (vmClassLoader == NULL) {
+#ifdef DEBUG
+        LOGI("findLoadedClass, no %s", classLoader, v1);
+#endif
         goto clean;
     }
 
@@ -1144,28 +1146,39 @@ jclass findLoadedClass(JNIEnv *env, jobject classLoader, const char *name) {
     fill_findLoadedClass_signature(v2);
     jmethodID findLoadedClass = (*env)->GetStaticMethodID(env, vmClassLoader, v1, v2);
     if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
+        (*env)->ExceptionDescribe(env);
+#endif
         (*env)->ExceptionClear(env);
     }
     if (findLoadedClass == NULL) {
+#ifdef DEBUG
+        char v3[0x80];
+        fill_java_lang_VMClassLoader(v3);
+        LOGI("findLoadedClass, no %s.%s%s", v3, v1, v2);
+#endif
         goto cleanVmClassLoader;
     }
 
-    jstring string = (*env)->NewStringUTF(env, name);
+    nameAsString = (*env)->NewStringUTF(env, name);
     loadedClass = (jclass) (*env)->CallStaticObjectMethod(env,
                                                           vmClassLoader,
                                                           findLoadedClass,
                                                           classLoader,
-                                                          string);
+                                                          nameAsString);
 
     if ((*env)->ExceptionCheck(env)) {
+#ifdef DEBUG
+        (*env)->ExceptionDescribe(env);
+#endif
         (*env)->ExceptionClear(env);
     }
 
 #ifdef DEBUG
-    debug(env, "loaded class: %s", loadedClass);
+    LOGI("findLoadedClass, name: %s, loaded class: %s", name, loadedClass);
 #endif
 
-    (*env)->DeleteLocalRef(env, string);
+    (*env)->DeleteLocalRef(env, nameAsString);
 cleanVmClassLoader:
     (*env)->DeleteLocalRef(env, vmClassLoader);
 clean:

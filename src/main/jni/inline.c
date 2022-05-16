@@ -311,7 +311,6 @@ bool isInlineHooked(void *symbol) {
     return false;
 }
 
-#ifdef DEBUG_HOOK_IO
 bool setRead(void *symbol) {
     uintptr_t address = (uintptr_t) symbol;
     uintptr_t page_size = (uintptr_t) getpagesize();
@@ -330,4 +329,3 @@ bool setRead(void *symbol) {
         return true;
     }
 }
-#endif

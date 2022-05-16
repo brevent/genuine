@@ -36,34 +36,26 @@ namespace art {
         template<class MirrorType>
         class ObjPtr {
 
-        public:
-            MirrorType *Ptr() const {
-                return nullptr;
-            }
-
         };
 
         template<bool kPoisonReferences, class MirrorType>
         class PtrCompression {
         public:
             // Compress reference to its bit representation.
-            static uint32_t Compress(MirrorType *mirror_ptr) {
+            static uint32_t Compress(MirrorType* mirror_ptr) {
                 uintptr_t as_bits = reinterpret_cast<uintptr_t>(mirror_ptr);
                 return static_cast<uint32_t>(kPoisonReferences ? -as_bits : as_bits);
             }
 
             // Uncompress an encoded reference from its bit representation.
-            static MirrorType *Decompress(uint32_t ref) {
+            static MirrorType* Decompress(uint32_t ref) {
                 uintptr_t as_bits = kPoisonReferences ? -ref : ref;
-                return reinterpret_cast<MirrorType *>(as_bits);
+                return reinterpret_cast<MirrorType*>(as_bits);
             }
 
             // Convert an ObjPtr to a compressed reference.
-            static uint32_t Compress(ObjPtr<MirrorType> ptr) REQUIRES_SHARED(Locks::mutator_lock_) {
-                return Compress(ptr.Ptr());
-            }
+            static uint32_t Compress(ObjPtr<MirrorType> ptr) REQUIRES_SHARED(Locks::mutator_lock_);
         };
-
 
         // Value type representing a reference to a mirror::Object of type MirrorType.
         template<bool kPoisonReferences, class MirrorType>
@@ -72,11 +64,20 @@ namespace art {
             using Compression = PtrCompression<kPoisonReferences, MirrorType>;
 
         public:
-            MirrorType *AsMirrorPtr() const {
+            /*
+             * Returns a pointer to the mirror of the managed object this reference is for.
+             *
+             * This does NOT return the current object (which isn't derived from, and
+             * therefor cannot be a mirror::Object) as a mirror pointer.  Instead, this
+             * returns a pointer to the mirror of the managed object this refers to.
+             *
+             * TODO (chriswailes): Rename to GetPtr().
+             */
+            MirrorType* AsMirrorPtr() const {
                 return Compression::Decompress(reference_);
             }
 
-            void Assign(MirrorType *other) {
+            void Assign(MirrorType* other) {
                 reference_ = Compression::Compress(other);
             }
 
@@ -95,14 +96,13 @@ namespace art {
                 return reference_;
             }
 
-            static ObjectReference<kPoisonReferences, MirrorType>
-            FromMirrorPtr(MirrorType *mirror_ptr)
+            static ObjectReference<kPoisonReferences, MirrorType> FromMirrorPtr(MirrorType* mirror_ptr)
             REQUIRES_SHARED(Locks::mutator_lock_) {
                 return ObjectReference<kPoisonReferences, MirrorType>(mirror_ptr);
             }
 
         protected:
-            explicit ObjectReference(MirrorType *mirror_ptr) REQUIRES_SHARED(Locks::mutator_lock_)
+            explicit ObjectReference(MirrorType* mirror_ptr) REQUIRES_SHARED(Locks::mutator_lock_)
                     : reference_(Compression::Compress(mirror_ptr)) {
             }
 
@@ -117,13 +117,13 @@ namespace art {
             CompressedReference<MirrorType>() REQUIRES_SHARED(Locks::mutator_lock_)
                     : mirror::ObjectReference<false, MirrorType>(nullptr) {}
 
-            static CompressedReference<MirrorType> FromMirrorPtr(MirrorType *p)
+            static CompressedReference<MirrorType> FromMirrorPtr(MirrorType* p)
             REQUIRES_SHARED(Locks::mutator_lock_) {
                 return CompressedReference<MirrorType>(p);
             }
 
         private:
-            explicit CompressedReference(MirrorType *p) REQUIRES_SHARED(Locks::mutator_lock_)
+            explicit CompressedReference(MirrorType* p) REQUIRES_SHARED(Locks::mutator_lock_)
                     : mirror::ObjectReference<false, MirrorType>(p) {}
         };
     }

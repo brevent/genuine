@@ -46,6 +46,9 @@ enum {
 #define LOGE(...) (genuine_log_print(ANDROID_LOG_ERROR, __VA_ARGS__))
 #endif
 
+extern jmethodID methodNop;
+extern size_t artMethodSize;
+
 void genuine_log_print(int prio, const char *fmt, ...);
 
 char *getGenuinePackageName();

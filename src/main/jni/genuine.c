@@ -10,6 +10,7 @@
 #include <inttypes.h>
 #include <android/log.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include "plt.h"
 #include "inline.h"
@@ -41,6 +42,9 @@ static int uid;
 #ifndef NO_CHECK_XPOSED
 static bool xposed = false;
 #endif
+
+jmethodID methodNop;
+size_t artMethodSize;
 
 static jint version(JNIEnv *env, jclass clazz __unused) {
     if (uid < 10000) {
@@ -1049,10 +1053,83 @@ bool has_native_libs() {
 #endif
 }
 
+#ifdef CHECK_HOOK
+static inline void fill_s_is_plt_hooked(char v[]) {
+    // %s is plt hooked
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 13;
+    } else if (m == 17) {
+        m = 19;
+    }
+
+    v[0x0] = '&';
+    v[0x1] = 'w';
+    v[0x2] = '%';
+    v[0x3] = 'o';
+    v[0x4] = 't';
+    v[0x5] = '(';
+    v[0x6] = 'y';
+    v[0x7] = 'f';
+    v[0x8] = '\x7f';
+    v[0x9] = ',';
+    v[0xa] = 'h';
+    v[0xb] = 'n';
+    v[0xc] = 'm';
+    v[0xd] = 'h';
+    v[0xe] = 'a';
+    v[0xf] = 'a';
+    for (unsigned int i = 0; i < 0x10; ++i) {
+        v[i] ^= ((i + 0x10) % m);
+    }
+    v[0x10] = '\0';
+}
+#endif
+
+static inline void fill_nop(char v[]) {
+    // nop
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 2;
+    } else if (m == 3) {
+        m = 5;
+    }
+
+    v[0x0] = 'o';
+    v[0x1] = 'o';
+    v[0x2] = 'q';
+    for (unsigned int i = 0; i < 0x3; ++i) {
+        v[i] ^= ((i + 0x3) % m);
+    }
+    v[0x3] = '\0';
+}
+
+static inline void fill_nop_signature(char v[]) {
+    // ()V
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 2;
+    } else if (m == 3) {
+        m = 5;
+    }
+
+    v[0x0] = ')';
+    v[0x1] = ')';
+    v[0x2] = 'W';
+    for (unsigned int i = 0; i < 0x3; ++i) {
+        v[i] ^= ((i + 0x3) % m);
+    }
+    v[0x3] = '\0';
+}
+
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
     char v1[0x20];
+    char v2[0x20];
 
     signal(SIGCONT, handler);
     fill_add_sigcont(v1);
@@ -1168,7 +1245,6 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
         LOGI("antiXposed start");
 #endif
         antiXposed(env, clazz, sdk, &xposed);
-        checkClassLoader(env, sdk);
 #endif
     }
 
@@ -1184,14 +1260,16 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 #endif
 
 #ifdef CHECK_HOOK
-#define CHECK_HOOK_SYMBOL(x) do {\
-    if (genuine == CHECK_TRUE) {\
-        fill_##x(v1);\
-        if (isPltHooked(v1, true)) {\
-            genuine = CHECK_FALSE;\
-            }\
-        }\
-    } while(0);
+#define CHECK_HOOK_SYMBOL(x) do {       \
+    if (genuine == CHECK_TRUE) {        \
+        fill_##x(v1);                   \
+        if (isPltHooked(v1, true)) {    \
+            LOGW(v2, v1);               \
+            genuine = CHECK_FALSE;      \
+        }                               \
+    }                                   \
+} while(0);
+    fill_s_is_plt_hooked(v2);
     CHECK_HOOK_SYMBOL(open);
     CHECK_HOOK_SYMBOL(openat);
     CHECK_HOOK_SYMBOL(__openat);
@@ -1200,6 +1278,7 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 
 #if defined(CHECK_ARM64) && defined(__arm__)
     if (genuine == CHECK_TRUE) {
+        char prop[PROP_VALUE_MAX] = {0};
         fill_ro_product_cpu_abi(v1);
         __system_property_get(v1, prop);
         if (isArm64V8a(prop)) {
@@ -1218,12 +1297,44 @@ clean:
 
     (*env)->DeleteLocalRef(env, clazz);
 
-#ifdef DEBUG
-    LOGI("JNI_OnLoad end, genuine: %d", genuine);
-#endif
-
     if (genuine != CHECK_PROXY && isAmProxy(env, sdk)) {
         genuine = CHECK_PROXY;
+    }
+
+
+
+    fill_nop(v1);
+    jclass classNop = (*env)->FindClass(env, v1);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+    }
+#if defined(DEBUG) || defined(DEBUG_XPOSED)
+    logObject(env, "classNop: %s", classNop);
+#endif
+    if (classNop != NULL) {
+        fill_nop_signature(v2);
+        methodNop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        v1[0] = 'o';
+        jmethodID methodOop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        if (methodNop != NULL && methodOop != NULL) {
+            artMethodSize = (u_int8_t *) methodOop - (u_int8_t *) methodNop;
+        }
+#if defined(DEBUG) || defined(DEBUG_XPOSED)
+        LOGI("methodNop: %p, methodOop: %p, artMethodSize: %d", methodNop, methodOop, artMethodSize);
+        memcpy(methodOop, methodNop, artMethodSize);
+        (*env)->CallStaticObjectMethod(env, classNop, methodOop);
+#endif
+        (*env)->DeleteLocalRef(env, classNop);
+    }
+
+    if (checkClassLoader(env, sdk, &genuine) && genuine == CHECK_TRUE) {
+        genuine = CHECK_DEX;
     }
 
 done:
