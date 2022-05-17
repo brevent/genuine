@@ -1,14 +1,59 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://dl.google.com/dl/android/maven2'
+        }
+    }
+    dependencies {
+        // view-source:https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml
+        classpath 'com.android.tools.build:gradle:4.2.2' // 7.2.0
+        // view-source:https://repo1.maven.org/maven2/com/github/dcendents/android-maven-gradle-plugin/maven-metadata.xml
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        maven {
+            url 'https://dl.google.com/dl/android/maven2/'
+        }
+    }
+}
+
+if (!rootProject.hasProperty('compileSdkVersion')) {
+    project.ext.compileSdkVersion = 32
+    project.ext.targetSdkVersion = 32
+    project.ext.minSdkVersion = 16
+    project.ext.versionCode = 1
+    project.ext.versionName = '1'
+    project.ext.appcompatVersion = '1.4.1'
+    project.ext.buildToolsVersion = '30.0.3' // build tools 31.0.0+ requires agp 7.0.0+
+    project.ext.ndkVersion = '23.1.7779620'
+} else {
+    project.ext.compileSdkVersion = rootProject.compileSdkVersion
+    project.ext.targetSdkVersion = rootProject.targetSdkVersion
+    project.ext.minSdkVersion = rootProject.minSdkVersion
+    project.ext.versionCode = rootProject.versionCode
+    project.ext.versionName = rootProject.versionName
+    project.ext.appcompatVersion = rootProject.appcompatVersion
+    project.ext.buildToolsVersion = rootProject.buildToolsVersion
+    project.ext.ndkVersion = rootProject.ndkVersion
+}
+
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion rootProject.compileSdkVersion
-    buildToolsVersion rootProject.buildToolsVersion
+    compileSdkVersion project.compileSdkVersion
+    buildToolsVersion project.buildToolsVersion
+    ndkVersion project.ndkVersion
 
     defaultConfig {
-        minSdkVersion rootProject.minSdkVersion
-        targetSdkVersion rootProject.targetSdkVersion
-        versionCode rootProject.versionCode
-        versionName rootProject.versionName
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+        versionCode project.versionCode
+        versionName project.versionName
         buildConfigField 'int', 'APP_VERSION_CODE', "${versionCode}"
         buildConfigField 'String', 'APP_VERSION_NAME', "\"${versionName}\""
         ndk {
@@ -16,7 +61,7 @@ android {
         }
         externalNativeBuild {
             ndkBuild {
-                cFlags '-DVERSION=' + rootProject.versionCode
+                cFlags '-DVERSION=' + project.versionCode
             }
         }
     }
@@ -34,11 +79,12 @@ android {
 }
 
 dependencies {
-    implementation "androidx.appcompat:appcompat:${rootProject.appcompatVersion}"
+    implementation "androidx.appcompat:appcompat:${project.appcompatVersion}"
 }
 
 task deleteNativeBuild(type: Delete) {
     delete file('.externalNativeBuild')
+    delete file('.cxx')
 }
 
 clean.finalizedBy deleteNativeBuild
