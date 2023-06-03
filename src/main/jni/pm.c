@@ -2,10 +2,17 @@
 // Created by Thom on 2019/3/15.
 //
 
+#include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <android/log.h>
 #include "common.h"
 #include "pm.h"
+#ifndef DEBUG
+#ifdef DEBUG_PM
+#define DEBUG
+#endif
+#endif
 
 static inline void fill_android_os_ServiceManager(char v[]) {
     // android/os/ServiceManager
@@ -673,6 +680,9 @@ char *getPath(JNIEnv *env, int uid, const char *packageName) {
     int userId = uid / 100000;
     jobject applicationInfo = (*env)->CallObjectMethod(env, IPackageManager, method,
                                                        stringPackageName, 0, userId);
+#ifdef DEBUG
+    LOGI("getApplicationInfo(%s, %d, %d): %p", packageName, 0, userId, applicationInfo);
+#endif
     debug(env, "applicationInfo: %s", applicationInfo);
     if (applicationInfo == NULL) {
         if ((*env)->ExceptionCheck(env)) {
@@ -749,4 +759,3 @@ cleanClassServiceManager:
 
     return path;
 }
-

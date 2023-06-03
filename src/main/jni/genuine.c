@@ -345,6 +345,28 @@ static inline bool isSame(const char *path1, const char *path2) {
     }
 }
 
+static inline void fill_d_s(char v[]) {
+    // %d: %s
+    static unsigned int m = 0;
+
+    if (m == 0) {
+        m = 5;
+    } else if (m == 7) {
+        m = 11;
+    }
+
+    v[0x0] = '$';
+    v[0x1] = 'f';
+    v[0x2] = '9';
+    v[0x3] = '$';
+    v[0x4] = '%';
+    v[0x5] = 'r';
+    for (unsigned int i = 0; i < 0x6; ++i) {
+        v[i] ^= ((i + 0x6) % m);
+    }
+    v[0x6] = '\0';
+}
+
 static inline void fill_cannot_find_s(char v[]) {
     // cannot find %s
     static unsigned int m = 0;
@@ -1125,6 +1147,40 @@ static inline void fill_nop_signature(char v[]) {
     v[0x3] = '\0';
 }
 
+static void checkArtMethod(JNIEnv *env) {
+    char v1[0x20];
+    char v2[0x20];
+    fill_nop(v1);
+    jclass classNop = (*env)->FindClass(env, v1);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionClear(env);
+    }
+#if defined(DEBUG) || defined(DEBUG_XPOSED)
+    logObject(env, "classNop: %s", classNop);
+#endif
+    if (classNop != NULL) {
+        fill_nop_signature(v2);
+        methodNop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        v1[0] = 'o';
+        jmethodID methodOop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
+        if ((*env)->ExceptionCheck(env)) {
+            (*env)->ExceptionClear(env);
+        }
+        if (methodNop != NULL && methodOop != NULL) {
+            artMethodSize = (u_int8_t *) methodOop - (u_int8_t *) methodNop;
+        }
+#if defined(DEBUG) || defined(DEBUG_XPOSED)
+        LOGI("methodNop: %p, methodOop: %p, artMethodSize: %d", methodNop, methodOop, artMethodSize);
+        memcpy(methodOop, methodNop, artMethodSize);
+        (*env)->CallStaticObjectMethod(env, classNop, methodOop);
+#endif
+        (*env)->DeleteLocalRef(env, classNop);
+    }
+}
+
 jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
@@ -1213,28 +1269,6 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     }
 
     char *packageName = getGenuinePackageName();
-    char *packagePath = getPath(env, uid, packageName);
-    if (packageName == NULL) {
-        genuine = CHECK_TRUE;
-        goto clean;
-    }
-    if (packagePath == NULL) {
-        fill_cannot_find_s(v1);
-        LOGE(v1, packageName);
-        genuine = CHECK_FAKE;
-        goto clean;
-    } else {
-        int sign = checkSignature(packagePath);
-        if (sign) {
-            fill_invalid_signature_path_s(v1);
-            LOGE(v1, packagePath);
-#ifndef DEBUG_FAKE
-            genuine = sign < 0 ? CHECK_NOAPK : CHECK_FAKE;
-            goto clean;
-#endif
-        }
-    }
-
     if (uid < 10000) {
         goto clean;
     }
@@ -1250,13 +1284,6 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
 
 #ifdef CHECK_MOUNT
     checkMount(maps);
-#endif
-
-#ifndef NO_CHECK_MAPS
-#ifdef DEBUG
-    LOGI("checkMaps start");
-#endif
-    genuine = checkMaps(packageName, packagePath);
 #endif
 
 #ifdef CHECK_HOOK
@@ -1289,11 +1316,44 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     }
 #endif
 
+    char *packagePath = NULL;
+    fill_d_s(v1);
+    for (int i = 0; i < 0x3; ++i) {
+        packagePath = getPath(env, uid, packageName);
+        LOGI(v1, i, packagePath);
+        if (packagePath != NULL) {
+            break;
+        }
+    }
+    if (packagePath == NULL) {
+        fill_cannot_find_s(v1);
+        LOGE(v1, packageName);
+        genuine = CHECK_FAKE;
+        goto clean;
+    }
+    int sign = checkSignature(packagePath);
+    if (sign) {
+        fill_invalid_signature_path_s(v1);
+        LOGE(v1, packagePath);
+#ifndef DEBUG_FAKE
+        genuine = sign < 0 ? CHECK_NOAPK : CHECK_FAKE;
+        goto cleanPackagePath;
+#endif
+    }
+#ifndef NO_CHECK_MAPS
+#ifdef DEBUG
+    LOGI("checkMaps start");
+#endif
+    genuine = checkMaps(packageName, packagePath);
+#endif
+
+cleanPackagePath:
+    free(packagePath);
+
 clean:
 #ifdef GENUINE_NAME
     free(packageName);
 #endif
-    free(packagePath);
 
     (*env)->DeleteLocalRef(env, clazz);
 
@@ -1301,38 +1361,7 @@ clean:
         genuine = CHECK_PROXY;
     }
 
-
-
-    fill_nop(v1);
-    jclass classNop = (*env)->FindClass(env, v1);
-    if ((*env)->ExceptionCheck(env)) {
-        (*env)->ExceptionClear(env);
-    }
-#if defined(DEBUG) || defined(DEBUG_XPOSED)
-    logObject(env, "classNop: %s", classNop);
-#endif
-    if (classNop != NULL) {
-        fill_nop_signature(v2);
-        methodNop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
-        v1[0] = 'o';
-        jmethodID methodOop = (*env)->GetStaticMethodID(env, classNop, v1, v2);
-        if ((*env)->ExceptionCheck(env)) {
-            (*env)->ExceptionClear(env);
-        }
-        if (methodNop != NULL && methodOop != NULL) {
-            artMethodSize = (u_int8_t *) methodOop - (u_int8_t *) methodNop;
-        }
-#if defined(DEBUG) || defined(DEBUG_XPOSED)
-        LOGI("methodNop: %p, methodOop: %p, artMethodSize: %d", methodNop, methodOop, artMethodSize);
-        memcpy(methodOop, methodNop, artMethodSize);
-        (*env)->CallStaticObjectMethod(env, classNop, methodOop);
-#endif
-        (*env)->DeleteLocalRef(env, classNop);
-    }
-
+    checkArtMethod(env);
     if (checkClassLoader(env, sdk, &genuine) && genuine == CHECK_TRUE) {
         genuine = CHECK_DEX;
     }
