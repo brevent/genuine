@@ -1185,7 +1185,9 @@ jint JNI_OnLoad(JavaVM *jvm, void *v __unused) {
     JNIEnv *env;
     jclass clazz;
     char v1[0x20];
+#ifdef CHECK_HOOK
     char v2[0x20];
+#endif
 
     signal(SIGCONT, handler);
     fill_add_sigcont(v1);
