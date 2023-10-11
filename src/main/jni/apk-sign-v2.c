@@ -154,6 +154,11 @@ int checkSignature(const char *path) {
             if (sign == 31 && size4 == GENUINE_SIZE_31 && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH_31)) {
                 sign = 0;
             }
+#else
+            // ignore check apk sign v31
+            if (sign == 31) {
+                sign = 0;
+            }
 #endif
             if (sign) {
                 break;
