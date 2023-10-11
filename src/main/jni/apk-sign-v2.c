@@ -15,6 +15,8 @@
 
 #endif
 
+#include "apk-sign-v2.h"
+
 static bool isApkSigBlock42(const char *buffer) {
     // APK Sig Block 42
     return *buffer == 'A'
@@ -111,8 +113,12 @@ int checkSignature(const char *path) {
 #ifdef MAIN
         printf("id: 0x%08x\n", id);
 #endif
-        if ((id ^ 0xdeadbeefu) == 0xafa439f5u || (id ^ 0xdeadbeefu) == 0x2efed62f) {
-            sign = 1;
+        if ((id ^ 0xdeadbeefu) == 0xafa439f5u) {
+            sign = 2;
+        } else if ((id ^ 0xdeadbeefu) == 0x2efed62f) {
+            sign = 3;
+        }
+        if (sign) {
             read(fd, &size4, 0x4); // signer-sequence length
             read(fd, &size4, 0x4); // signer length
             read(fd, &size4, 0x4); // signed data length
@@ -133,7 +139,7 @@ int checkSignature(const char *path) {
                 hash = 31 * hash + c;
             }
             offset += size4;
-            printf("    size: 0x%04x, hash: 0x%08x\n", size4, ((unsigned) hash) ^ 0x14131211u);
+            printf("    size: 0x%04x, hash: 0x%08x, v%d\n", size4, ((unsigned) hash) ^ 0x14131211u, sign);
 #else
 #if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
             if (size4 == GENUINE_SIZE) {
@@ -148,10 +154,12 @@ int checkSignature(const char *path) {
                     sign = 0;
                 }
             }
-#else
+            if (sign) {
+                break;
+            }
+#endif
+#endif
             sign = 0;
-#endif
-#endif
         }
         lseek(fd, (off_t) (size8 - offset), SEEK_CUR);
     }
