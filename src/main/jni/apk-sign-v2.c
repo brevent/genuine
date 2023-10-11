@@ -117,8 +117,12 @@ int checkSignature(const char *path) {
             sign = 2;
         } else if ((id ^ 0xdeadbeefu) == 0x2efed62f) {
             sign = 3;
+        } else if ((id ^ 0xdeadbeefu) == 0xc53e138eu) {
+            sign = 31;
+        } else {
+            sign = 1;
         }
-        if (sign) {
+        if (sign > 1) {
             read(fd, &size4, 0x4); // signer-sequence length
             read(fd, &size4, 0x4); // signer length
             read(fd, &size4, 0x4); // signed data length
@@ -131,7 +135,6 @@ int checkSignature(const char *path) {
             read(fd, &size4, 0x4); // certificates length
             read(fd, &size4, 0x4); // certificate length
             offset += 0x4 * 2;
-#ifdef MAIN
             int hash = 1;
             signed char c;
             for (unsigned i = 0; i < size4; ++i) {
@@ -139,25 +142,22 @@ int checkSignature(const char *path) {
                 hash = 31 * hash + c;
             }
             offset += size4;
+#ifdef MAIN
             printf("    size: 0x%04x, hash: 0x%08x, v%d\n", size4, ((unsigned) hash) ^ 0x14131211u, sign);
 #else
 #if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
-            if (size4 == GENUINE_SIZE) {
-                int hash = 1;
-                signed char c;
-                for (unsigned i = 0; i < size4; ++i) {
-                    read(fd, &c, 0x1);
-                    hash = 31 * hash + c;
-                }
-                offset += size4;
-                if ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH) {
-                    sign = 0;
-                }
+            if (size4 == GENUINE_SIZE && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH)) {
+                sign = 0;
             }
+#endif
+#if defined(GENUINE_SIZE_31) && defined(GENUINE_HASH_31)
+            if (sign == 31 && size4 == GENUINE_SIZE_31 && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH_31)) {
+                sign = 0;
+            }
+#endif
             if (sign) {
                 break;
             }
-#endif
 #endif
             sign = 0;
         }
