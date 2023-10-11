@@ -58,6 +58,7 @@ int checkSignature(const char *path) {
         return sign;
     }
 
+    bool verified = false;
     sign = 1;
     // https://en.wikipedia.org/wiki/Zip_(file_format)#End_of_central_directory_record_(EOCD)
     for (int i = 0;; ++i) {
@@ -123,6 +124,7 @@ int checkSignature(const char *path) {
             sign = 1;
         }
         if (sign > 1) {
+            verified = false;
             read(fd, &size4, 0x4); // signer-sequence length
             read(fd, &size4, 0x4); // signer length
             read(fd, &size4, 0x4); // signed data length
@@ -147,24 +149,23 @@ int checkSignature(const char *path) {
 #else
 #if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
             if (size4 == GENUINE_SIZE && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH)) {
-                sign = 0;
+                verified = true;
             }
 #endif
 #if defined(GENUINE_SIZE_31) && defined(GENUINE_HASH_31)
             if (sign == 31 && size4 == GENUINE_SIZE_31 && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH_31)) {
-                sign = 0;
+                verified = true;
             }
 #else
             // ignore check apk sign v31
             if (sign == 31) {
-                sign = 0;
+                verified = true;
             }
 #endif
-            if (sign) {
+            if (!verified) {
                 break;
             }
 #endif
-            sign = 0;
         }
         lseek(fd, (off_t) (size8 - offset), SEEK_CUR);
     }
@@ -172,6 +173,9 @@ int checkSignature(const char *path) {
 clean:
     close(fd);
 
+    if (verified) {
+        return 0;
+    }
     return sign;
 }
 
