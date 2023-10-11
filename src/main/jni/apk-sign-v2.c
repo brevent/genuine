@@ -45,6 +45,9 @@ int checkSignature(const char *path) {
 #endif
 
     int sign = -1;
+#ifdef MAIN
+#define openAt openat
+#endif
     int fd = (int) openAt(AT_FDCWD, path, O_RDONLY);
 #ifdef DEBUG_OPENAT
     LOGI("openat %s returns %d", path, fd);
@@ -109,6 +112,7 @@ int checkSignature(const char *path) {
         printf("id: 0x%08x\n", id);
 #endif
         if ((id ^ 0xdeadbeefu) == 0xafa439f5u || (id ^ 0xdeadbeefu) == 0x2efed62f) {
+            sign = 1;
             read(fd, &size4, 0x4); // signer-sequence length
             read(fd, &size4, 0x4); // signer length
             read(fd, &size4, 0x4); // signed data length
@@ -142,12 +146,10 @@ int checkSignature(const char *path) {
                 offset += size4;
                 if ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH) {
                     sign = 0;
-                    break;
                 }
             }
 #else
             sign = 0;
-            break;
 #endif
 #endif
         }
