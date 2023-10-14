@@ -8,6 +8,10 @@
 
 #ifdef MAIN
 #include <stdio.h>
+#ifdef __APPLE__
+#include <string.h>
+#include <CommonCrypto/CommonDigest.h>
+#endif
 #else
 
 #include "common.h"
@@ -36,6 +40,48 @@ static bool isApkSigBlock42(const char *buffer) {
            && *++buffer == '4'
            && *++buffer == '2';
 }
+
+#if defined(MAIN) && defined(__APPLE__)
+static unsigned char digest[CC_SHA1_DIGEST_LENGTH];
+#endif
+
+static unsigned calcHash(int fd, unsigned size) {
+    signed char c;
+    unsigned i = 0;
+    int hash = 1;
+
+#if defined(MAIN) && defined(__APPLE__)
+    CC_SHA1_CTX context;
+    CC_SHA1_Init(&context);
+    memset(digest, 0, CC_SHA1_DIGEST_LENGTH);
+#endif
+
+    while (i < size) {
+        read(fd, &c, 0x1);
+#if defined(MAIN) && defined(__APPLE__)
+        CC_SHA1_Update(&context, &c, 1);
+#endif
+        hash = 31 * hash + c;
+        ++i;
+    }
+#if defined(MAIN) && defined(__APPLE__)
+    CC_SHA1_Final(digest, &context);
+#endif
+    return (unsigned) hash;
+}
+
+#ifdef MAIN
+static void showCert(unsigned size, unsigned hash, int sign, const char *prefix) {
+    printf("%ssize: 0x%04x, hash: 0x%08x", prefix, size, hash ^ 0x14131211u);
+#ifdef __APPLE__
+    printf(", sha1: ");
+    for (int i = 0; i < CC_SHA1_DIGEST_LENGTH; ++i) {
+        printf("%02x", digest[i]);
+    }
+#endif
+    printf(", sign v%d\n", sign);
+}
+#endif
 
 int checkSignature(const char *path) {
     unsigned char buffer[0x11] = {0};
@@ -124,6 +170,7 @@ int checkSignature(const char *path) {
             sign = 1;
         }
         if (sign > 1) {
+            uint32_t size, hash;
             verified = false;
             read(fd, &size4, 0x4); // signer-sequence length
             read(fd, &size4, 0x4); // signer length
@@ -135,33 +182,83 @@ int checkSignature(const char *path) {
             offset += 0x4 + size4;
 
             read(fd, &size4, 0x4); // certificates length
-            read(fd, &size4, 0x4); // certificate length
+            read(fd, &size, 0x4); // certificate length
             offset += 0x4 * 2;
-            int hash = 1;
-            signed char c;
-            for (unsigned i = 0; i < size4; ++i) {
-                read(fd, &c, 0x1);
-                hash = 31 * hash + c;
-            }
-            offset += size4;
+            hash = calcHash(fd, size);
+            offset += size;
 #ifdef MAIN
-            printf("    size: 0x%04x, hash: 0x%08x, v%d\n", size4, ((unsigned) hash) ^ 0x14131211u, sign);
-#else
+            showCert(size, hash, sign, "    signer, ");
+#endif
 #if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
-            if (size4 == GENUINE_SIZE && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH)) {
+            if (size == GENUINE_SIZE && (hash ^ 0x14131211u) == GENUINE_HASH) {
                 verified = true;
             }
 #endif
-#if defined(GENUINE_SIZE_31) && defined(GENUINE_HASH_31)
-            if (sign == 31 && size4 == GENUINE_SIZE_31 && ((((unsigned) hash) ^ 0x14131211u) == GENUINE_HASH_31)) {
-                verified = true;
-            }
-#else
-            // ignore check apk sign v31
-            if (sign == 31) {
-                verified = true;
-            }
+            if (!verified && size4 - size == 4 && (sign == 3 || sign == 31)) {
+                int64_t attributes_size, attribute_size;
+                uint32_t minSdk, maxSdk;
+                read(fd, &minSdk, 0x4); // minSdk
+                read(fd, &maxSdk, 0x4); // maxSdk
+                read(fd, &size4, 0x4); // length of additional attributes
+                attributes_size = size4;
+                offset += 0x4 * 3;
+#ifdef MAIN
+                printf("    minSdk: %d, maxSdk: %d\n", minSdk, maxSdk);
 #endif
+                while (attributes_size > 0) {
+                    read(fd, &size4, 0x4); // attribute length
+                    attribute_size = size4;
+                    attributes_size -= 0x4;
+                    attributes_size -= attribute_size;
+                    read(fd, &size4, 0x4); // attribute ID
+                    attribute_size -= 0x4;
+                    offset += 0x4 * 2;
+#ifdef MAIN
+                    printf("    attribute id: 0x%08x, size: %lld\n", size4, attribute_size);
+#endif
+                    if ((size4 ^ 0xdeadbeefu) == 0xe50dd163u) {
+                        read(fd, &size4, 0x4); // version
+#ifdef MAIN
+                        printf("        version: %d\n", size4);
+#endif
+                        offset += 0x4;
+                        attribute_size -= 0x4;
+                        while (attribute_size > 0) {
+                            unsigned node;
+                            read(fd, &node, 0x4); // length of node
+                            offset += 0x4 + node;
+                            attribute_size -= 0x4 + node;
+                            read(fd, &size4, 0x4); // length of signed data
+                            read(fd, &size, 0x4); // length of certificate
+                            node -= 0x4 * 2 + size;
+                            hash = calcHash(fd, size);
+#ifdef MAIN
+                            showCert(size, hash, sign, "        rotate, ");
+#endif
+#if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
+                            if (size == GENUINE_SIZE && (hash ^ 0x14131211u) == GENUINE_HASH) {
+                                verified = true;
+                            }
+#endif
+                            lseek(fd, (off_t) node, SEEK_CUR);
+                        }
+#ifdef MAIN
+                    } else if (size4 == 0x559f8b02) {
+                        read(fd, &size4, 0x4);
+                        offset += 0x4;
+                        attribute_size -= 0x4;
+                        printf("        rotation minSdk: %d\n", size4);
+                    } else if (size4 == 0xc2a6b3ba) {
+                        printf("        rotation minSdk: development\n");
+#endif
+                    }
+                    if (attribute_size > 0) {
+                        lseek(fd, (off_t) attribute_size, SEEK_CUR);
+                        offset += attribute_size;
+                    }
+                }
+            }
+#if defined(GENUINE_SIZE) && defined(GENUINE_HASH)
             if (!verified) {
                 break;
             }
