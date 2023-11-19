@@ -13,6 +13,8 @@ static inline void fill_android_app_ActivityManager(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -56,6 +58,8 @@ static inline void fill_getService(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'd';
@@ -82,6 +86,8 @@ static inline void fill_getService_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -130,6 +136,8 @@ static inline void fill_android_app_ActivityManagerNative(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -179,6 +187,8 @@ static inline void fill_getDefault(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'd';
@@ -205,6 +215,8 @@ static inline void fill_getDefault_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -253,6 +265,8 @@ static inline void fill_android_os_BinderProxy(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -291,6 +305,8 @@ static inline void fill_android_os_IInterface(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -328,6 +344,8 @@ static inline void fill_asBinder(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -352,6 +370,8 @@ static inline void fill_asBinder_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '+';
@@ -390,6 +410,8 @@ static inline void fill_android_os_ServiceManager(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -431,6 +453,8 @@ static inline void fill_getService_signature_IBinder(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '+';
@@ -487,6 +511,8 @@ static inline void fill_activity(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -511,6 +537,8 @@ static inline void fill_getName(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -534,6 +562,8 @@ static inline void fill_getName_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -570,6 +600,8 @@ static inline void fill_activity_manager_service_is_s(char v[]) {
         m = 29;
     } else if (m == 31) {
         m = 37;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';

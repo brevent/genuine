@@ -38,6 +38,8 @@ static void inline fill_NewLocalRef(char v[]) {
         m = 47;
     } else if (m == 53) {
         m = 59;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '\\';
@@ -124,6 +126,8 @@ static inline void fill_DeleteLocalRef(char v[]) {
         m = 43;
     } else if (m == 47) {
         m = 53;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -217,6 +221,8 @@ static inline void fill_dalvik_system_BaseDexClassLoader(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -265,6 +271,8 @@ static inline void fill_java_lang_Object(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'i';
@@ -342,6 +350,8 @@ static inline void fill_java_lang_Class(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -373,6 +383,8 @@ static inline void fill_getClassLoader(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -403,6 +415,8 @@ static inline void fill_getClassLoader_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -444,6 +458,8 @@ static inline void fill_XC_MethodHook(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '/';
@@ -474,6 +490,8 @@ static inline void fill_nop(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'o';
@@ -693,6 +711,8 @@ static inline void fill_VisitRoots(char v[]) {
         m = 47;
     } else if (m == 53) {
         m = 59;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -822,6 +842,8 @@ static inline void fill_SweepJniWeakGlobals(char v[]) {
         m = 59;
     } else if (m == 61) {
         m = 67;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ']';
@@ -953,6 +975,8 @@ static inline void fill_isArray(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -976,6 +1000,8 @@ static inline void fill___Z(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -995,6 +1021,8 @@ static inline void fill_toString(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'u';
@@ -1019,6 +1047,8 @@ static inline void fill_getName(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -1042,6 +1072,8 @@ static inline void fill_void_string_signature(char *v) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -1078,6 +1110,8 @@ static inline void fill_java_lang_ClassLoader(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -1115,6 +1149,8 @@ static inline void fill_loadClass(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'n';
@@ -1140,6 +1176,8 @@ static inline void fill_loadClass_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '.';

@@ -16,6 +16,8 @@ static inline void fill_java_util_Arrays(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'i';
@@ -48,6 +50,8 @@ static inline void fill_dexElements(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -75,6 +79,8 @@ static inline void fill_dexElements_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -127,6 +133,8 @@ static inline void fill_InMemoryDexFile(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'K';
@@ -158,6 +166,8 @@ static inline void fill__apk(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '/';
@@ -178,6 +188,8 @@ static inline void fill__data_app_(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -231,6 +243,8 @@ static inline void fill_nativeLibraryDirectories(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'o';
@@ -271,6 +285,8 @@ static inline void fill_nativeLibraryDirectories_signature(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'O';
@@ -303,6 +319,8 @@ static inline void fill_java_util_List(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -333,6 +351,8 @@ static inline void fill_toString(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'u';
@@ -357,6 +377,8 @@ static inline void fill_Arrays_toString_signature(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -412,6 +434,8 @@ static inline void fill_toArray(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'v';
@@ -435,6 +459,8 @@ static inline void fill_Arrays_toArray_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -472,6 +498,8 @@ static inline void fill_isEmpty(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -495,6 +523,8 @@ static inline void fill_Arrays_isEmpty_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -514,6 +544,8 @@ static inline void fill_pathList(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'q';
@@ -538,6 +570,8 @@ static inline void fill_pathList_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'H';

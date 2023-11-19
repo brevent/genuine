@@ -24,6 +24,8 @@ static inline void fill_dalvik_system_InMemoryDexClassLoader(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'a';
@@ -76,6 +78,8 @@ static inline void fill_InMemoryDexClassLoader_init(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '=';
@@ -98,6 +102,8 @@ static inline void fill_InMemoryDexClassLoader_init_signature(char v[]) {
         m = 43;
     } else if (m == 47) {
         m = 53;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -161,6 +167,8 @@ static inline void fill_NoHook(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '%';
@@ -183,6 +191,8 @@ static inline void fill_hookMethod_template_signature(char v[]) {
         m = 41;
     } else if (m == 43) {
         m = 47;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -242,6 +252,8 @@ static inline void fill_xposedBridge_template(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '\'';
@@ -273,6 +285,8 @@ static inline void fill_hookMethod(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';

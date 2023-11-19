@@ -29,6 +29,8 @@ static inline void fill_invoke(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -51,6 +53,8 @@ static inline void fill_invoke_signature(char v[]) {
         m = 101;
     } else if (m == 103) {
         m = 107;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -169,6 +173,8 @@ static inline void fill_java_lang_reflect_InvocationTargetException(char v[]) {
         m = 41;
     } else if (m == 43) {
         m = 47;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -228,6 +234,8 @@ static inline void fill_java_lang_Throwable(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -263,6 +271,8 @@ static inline void fill_getCause(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -287,6 +297,8 @@ static inline void fill_getCause_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -356,6 +368,8 @@ static inline void fill__ZN3art6mirror9ArtMethod21xposed_callback_classE(char v[
         m = 47;
     } else if (m == 53) {
         m = 59;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -420,6 +434,8 @@ static inline void fill__ZN3art9ArtMethod21xposed_callback_classE(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '[';
@@ -477,6 +493,8 @@ static inline void fill__ZN3art6mirror9ArtMethod22xposed_callback_methodE(char v
         m = 47;
     } else if (m == 53) {
         m = 59;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ']';
@@ -542,6 +560,8 @@ static inline void fill__ZN3art9ArtMethod22xposed_callback_methodE(char v[]) {
         m = 41;
     } else if (m == 43) {
         m = 47;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -600,6 +620,8 @@ static inline void fill_java_lang_VMClassLoader(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'n';
@@ -639,6 +661,8 @@ static inline void fill_de_robv_android_xposed_XposedBridge(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -690,6 +714,8 @@ static inline void fill_findLoadedClass(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'd';
@@ -721,6 +747,8 @@ static inline void fill_findLoadedClass_signature(char v[]) {
         m = 59;
     } else if (m == 61) {
         m = 67;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -797,6 +825,8 @@ static inline void fill_invokeOriginalMethodNative(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'j';
@@ -839,6 +869,8 @@ static inline void fill_invokeOriginalMethodNative_signature(char v[]) {
         m = 113;
     } else if (m == 127) {
         m = 131;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '.';
@@ -975,6 +1007,8 @@ static inline void fill_handleHookedMethod(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'i';
@@ -1084,6 +1118,8 @@ static inline void fill_disableHooks(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -1113,6 +1149,8 @@ static inline void fill_disableHooks_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '[';

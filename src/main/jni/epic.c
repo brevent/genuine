@@ -14,6 +14,8 @@ static inline void fill_me_weishu_epic_art2_EpicNative(char v[]) {
         m = 29;
     } else if (m == 31) {
         m = 37;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'l';
@@ -60,6 +62,8 @@ static inline void fill_me_weishu_epic_art2_EpicBridge(char v[]) {
         m = 29;
     } else if (m == 31) {
         m = 37;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'l';
@@ -106,6 +110,8 @@ static inline void fill_hookedMethodCallbacks(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'j';
@@ -143,6 +149,8 @@ static inline void fill_hookedMethodCallbacks_signature(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'N';
@@ -174,6 +182,8 @@ static inline void fill_java_util_Map(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -203,6 +213,8 @@ static inline void fill_values(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'w';
@@ -225,6 +237,8 @@ static inline void fill_values_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -265,6 +279,8 @@ static inline void fill_java_util_Collection(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -301,6 +317,8 @@ static inline void fill_iterator(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'h';
@@ -325,6 +343,8 @@ static inline void fill_iterator_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '+';
@@ -363,6 +383,8 @@ static inline void fill_java_util_Iterator(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -397,6 +419,8 @@ static inline void fill_hasNext(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'j';
@@ -420,6 +444,8 @@ static inline void fill_hasNext_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -439,6 +465,8 @@ static inline void fill_next(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'o';
@@ -459,6 +487,8 @@ static inline void fill_next_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -495,6 +525,8 @@ static inline void fill_signature(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'Y';
@@ -530,6 +562,8 @@ static inline void fill_java_lang_Object(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'i';
@@ -667,6 +701,8 @@ static inline void fill_de_robv_android_xposed_DexposedBridge(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -768,6 +804,8 @@ static inline void fill_java_lang_Thread(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
     v[0x0] = 'i';
     v[0x1] = 'e';
@@ -799,6 +837,8 @@ static inline void fill_setUncaughtExceptionPreHandler(char v[]) {
         m = 29;
     } else if (m == 31) {
         m = 37;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -845,6 +885,8 @@ static inline void fill_setUncaughtExceptionHandler_signature(char v[]) {
         m = 43;
     } else if (m == 47) {
         m = 53;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '+';

@@ -24,6 +24,8 @@ static inline void fill_android_app_NativeActivity(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -66,6 +68,8 @@ static inline void fill_android_content_Intent(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -104,6 +108,8 @@ static inline void fill_android_app_ActivityThread(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -146,6 +152,8 @@ static inline void fill_currentApplication(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -180,6 +188,8 @@ static inline void fill_currentApplication_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -258,6 +268,8 @@ static inline void fill_init(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '=';
@@ -280,6 +292,8 @@ static inline void fill_void_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -299,6 +313,8 @@ static inline void fill_setClassName(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -327,6 +343,8 @@ static inline void fill_setClassName_signature(char v[]) {
         m = 61;
     } else if (m == 67) {
         m = 71;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -405,6 +423,8 @@ static inline void fill_setFlags(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -429,6 +449,8 @@ static inline void fill_setFlags_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -516,6 +538,8 @@ static inline void fill_cannot_getApplication(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'a';
@@ -553,6 +577,8 @@ static inline void fill_cannot_startActivity(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -589,6 +615,8 @@ static inline void fill_startActivity(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'q';
@@ -618,6 +646,8 @@ static inline void fill_startActivity_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -661,6 +691,8 @@ static inline void fill_native_activity_cannot_be_started_in_15s(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'm';

@@ -53,6 +53,8 @@ print('''
         m = %d;
     } else if (m == %d) {
         m = %d;
+    } else if (m == 1) {
+        m = 1;
     }
 ''' % (m, P[P.index(m) + 1], P[P.index(m) + 2]))
 

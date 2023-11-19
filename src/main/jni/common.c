@@ -155,6 +155,8 @@ char *getGenuinePackageName() {
         m = 20;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
     char name[] = GENUINE_NAME;
     unsigned int length = sizeof(name) - 1;
@@ -184,6 +186,8 @@ static inline void fill_ro_build_version_sdk(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 's';

@@ -30,6 +30,8 @@ static inline int fill_unsupported_genuine_x(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'w';
@@ -78,6 +80,8 @@ static inline void fill_getResources(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -106,6 +110,8 @@ static inline void fill_getResources_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -155,6 +161,8 @@ static inline void fill_getIdentifier(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -184,6 +192,8 @@ static inline void fill_getIdentifier_signature(char v[]) {
         m = 53;
     } else if (m == 59) {
         m = 61;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -257,6 +267,8 @@ static inline void fill_getString(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -282,6 +294,8 @@ static inline void fill_getString_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -319,6 +333,8 @@ static inline void fill_string(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';

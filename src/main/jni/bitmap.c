@@ -15,6 +15,8 @@ static inline void fill_android_text_TextPaint(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -53,6 +55,8 @@ static inline void fill_init(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '=';
@@ -75,6 +79,8 @@ static inline void fill_void_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -94,6 +100,8 @@ static inline void fill_setColor(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -118,6 +126,8 @@ static inline void fill_setColor_signature(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -139,6 +149,8 @@ static inline void fill_setTextSize(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'w';
@@ -166,6 +178,8 @@ static inline void fill_setTextSize_signature(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -186,6 +200,8 @@ static inline void fill_measureText(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'i';
@@ -213,6 +229,8 @@ static inline void fill_measureText_signature(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -250,6 +268,8 @@ static inline void fill_setAntiAlias(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -278,6 +298,8 @@ static inline void fill_setAntiAlias_signature(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -298,6 +320,8 @@ static inline void fill_descent(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -321,6 +345,8 @@ static inline void fill_float_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -341,6 +367,8 @@ static inline void fill_ascent(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -363,6 +391,8 @@ static inline void fill_android_graphics_Bitmap(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -402,6 +432,8 @@ static inline void fill_createBitmap(char v[]) {
         m = 11;
     } else if (m == 13) {
         m = 17;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -430,6 +462,8 @@ static inline void fill_createBitmap_signature(char v[]) {
         m = 59;
     } else if (m == 61) {
         m = 67;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '*';
@@ -507,6 +541,8 @@ static inline void fill_android_graphics_Bitmap$Config(char v[]) {
         m = 29;
     } else if (m == 31) {
         m = 37;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '`';
@@ -553,6 +589,8 @@ static inline void fill_ARGB_8888(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'C';
@@ -578,6 +616,8 @@ static inline void fill_ARGB_8888_signature(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'M';
@@ -626,6 +666,8 @@ static inline void fill_android_graphics_Canvas(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -665,6 +707,8 @@ static inline void fill_initCanvas_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '-';
@@ -709,6 +753,8 @@ static inline void fill_drawPaint(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -734,6 +780,8 @@ static inline void fill_drawPaint_signature(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';
@@ -777,6 +825,8 @@ static inline void fill_drawText(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -801,6 +851,8 @@ static inline void fill_drawText_signature(char v[]) {
         m = 43;
     } else if (m == 47) {
         m = 53;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ',';

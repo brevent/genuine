@@ -22,6 +22,8 @@ static inline void fill_android_os_ServiceManager(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -63,6 +65,8 @@ static inline void fill_getService(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'd';
@@ -89,6 +93,8 @@ static inline void fill_getService_signature(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '+';
@@ -145,6 +151,8 @@ static inline void fill_package(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -168,6 +176,8 @@ static inline void fill_android_content_pm_IPackageManager$Stub(char v[]) {
         m = 37;
     } else if (m == 41) {
         m = 43;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -223,6 +233,8 @@ static inline void fill_asInterface(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'e';
@@ -250,6 +262,8 @@ static inline void fill_asInterface_signature(char v[]) {
         m = 53;
     } else if (m == 59) {
         m = 61;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '-';
@@ -324,6 +338,8 @@ static inline void fill_getApplicationInfo(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -358,6 +374,8 @@ static inline void fill_getApplicationInfo_signature(char v[]) {
         m = 53;
     } else if (m == 59) {
         m = 61;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '-';
@@ -432,6 +450,8 @@ static inline void fill_sourceDir(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'q';
@@ -457,6 +477,8 @@ static inline void fill_sourceDir_signature(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'M';
@@ -491,6 +513,8 @@ static inline void fill_android_os_BinderProxy(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -529,6 +553,8 @@ static inline void fill_invalid_package_manager_path_s(char v[]) {
         m = 31;
     } else if (m == 37) {
         m = 41;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';

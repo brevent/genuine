@@ -69,6 +69,8 @@ static inline void fill_maps(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
     v[0x0] = '-';
     v[0x1] = 's';
@@ -100,6 +102,8 @@ static inline void fill_cannot_open_proc_self_maps(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'g';
@@ -142,6 +146,8 @@ static inline void fill_r(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 's';
@@ -208,6 +214,8 @@ static inline size_t fill_dex2oat_cmdline(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'f';
@@ -240,6 +248,8 @@ static inline size_t fill_dex_file(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '.';
@@ -315,6 +325,8 @@ static inline void fill_ba88(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
     v[0x0] = 'f';
     v[0x1] = 'o';
@@ -353,6 +365,8 @@ static inline void fill_d_s(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '$';
@@ -375,6 +389,8 @@ static inline void fill_cannot_find_s(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'b';
@@ -572,6 +588,8 @@ static inline void fill_jniRegisterNativeMethods(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'k';
@@ -612,6 +630,8 @@ static inline void fill___openat(char v[]) {
         m = 7;
     } else if (m == 11) {
         m = 13;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '^';
@@ -636,6 +656,8 @@ static inline void fill_openat(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'n';
@@ -658,6 +680,8 @@ static inline void fill_open(char v[]) {
         m = 3;
     } else if (m == 5) {
         m = 7;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'n';
@@ -684,6 +708,8 @@ static inline void fill_version(char v[]) {
         m = 5;
     } else if (m == 7) {
         m = 11;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 't';
@@ -707,6 +733,8 @@ static inline void fill_version_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
@@ -726,6 +754,8 @@ static inline void fill_sdk_d_genuine_d(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'r';
@@ -762,6 +792,8 @@ static inline void fill_add_sigcont(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'c';
@@ -797,6 +829,8 @@ static inline void fill_received_sigcont(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'q';
@@ -830,6 +864,8 @@ static inline void fill_ro_product_cpu_abi(char v[]) {
         m = 17;
     } else if (m == 19) {
         m = 23;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 's';
@@ -877,6 +913,8 @@ static inline void fill_32_64(char v[]) {
         m = 19;
     } else if (m == 23) {
         m = 29;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'v';
@@ -923,6 +961,8 @@ static inline void fill_invalid_signature_path_s(char v[]) {
         m = 23;
     } else if (m == 29) {
         m = 31;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'm';
@@ -1009,6 +1049,8 @@ static inline void fill_openat_is_hooked(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'l';
@@ -1084,6 +1126,8 @@ static inline void fill_s_is_plt_hooked(char v[]) {
         m = 13;
     } else if (m == 17) {
         m = 19;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = '&';
@@ -1117,6 +1161,8 @@ static inline void fill_nop(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = 'o';
@@ -1136,6 +1182,8 @@ static inline void fill_nop_signature(char v[]) {
         m = 2;
     } else if (m == 3) {
         m = 5;
+    } else if (m == 1) {
+        m = 1;
     }
 
     v[0x0] = ')';
