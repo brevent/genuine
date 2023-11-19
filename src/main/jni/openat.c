@@ -9,6 +9,7 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
+__attribute__((noinline))
 intptr_t openAt(intptr_t fd, const char *path, intptr_t flag) {
 #if defined(__arm__)
     intptr_t r;
